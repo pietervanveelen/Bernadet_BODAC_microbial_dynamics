@@ -1,0 +1,451 @@
+---
+title: "OBER_proj2_BODAC_seasonality"
+author: "Pieter van Veelen"
+date: "5/12/2022"
+output: html_document
+---
+
+### Background
+
+This is repository contains the analysis of microbial communities comprising biofilms in Biological Oxygen-Dosed Activated Carbon. The dataset describes the temporal dynamics of microbial communities in roughly bimonthly collected samples of BODAC and backwash water in an UltraPureWater factory in Emmen.
+Water purification performance of two consecutively placed BODAC filters demonstrates a remarkable system performance stability of 12 years, without replacement of activated carbon. Regular backwashing of the filters is responsible for prevention of saturation, while subsequent regeneration of microbial biofilms with hypothesized stable composition facilitates remarkable efficiency in water purification without downstream reverse osmosis membrane fouling in the system. Here we investigated the seasonal regeneration and allegedly stable biofilm community composition in BODAC filters and backwash water.
+Input data were created by sequencing 16S rRNA gene amplicons using primers 515F and 926R on Illumina Miseq (300 bp PE). Fastq sequence files were analysed using QIIME2 (scripts can be found in the scripts/QIIME2/ directory) and the feature table, taxonomic assignments, phylogeny and metadata were imported into R (in input_data/). The [SILVA database v.138](https://www.arb-silva.de/documentation/release-138/) was used as reference data for taxonomic assignments. This analysis was published by [**Bernadet et al. (2022)**](url DOI): *Regular backwashing promotes stable regeneration of microbial biofilms on activated carbon in BODAC filters*.
+
+**The full RMarkdown document is available as RMD file in this repository**
+<br>
+```{r , eval=TRUE, echo=FALSE, include=FALSE, message=FALSE, warning=FALSE}
+
+# set optional parameters
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE, 
+                      message = FALSE)
+options(scipen = 999, digits = 3)
+```
+
+```{r install packages, eval=TRUE, echo=FALSE, include=FALSE, message=FALSE, warning=FALSE}
+
+# install packages
+if (!requireNamespace("BiocManager", quietly = TRUE)){install.packages("BiocManager")}
+if (!requireNamespace("devtools", quietly = TRUE)){install.packages("devtools")}
+if (!requireNamespace("remotes", quietly = TRUE)){install.packages("remotes")}
+if (!requireNamespace("BiocManager", quietly = TRUE)){BiocManager::install(version = "3.12")}
+if (!requireNamespace("phyloseq", quietly = TRUE)){BiocManager::install("phyloseq")}
+if (!requireNamespace("microbiome", quietly = TRUE)){BiocManager::install("microbiome")}
+if (!requireNamespace("decontam", quietly = TRUE)){BiocManager::install("decontam")}
+if (!requireNamespace("qiime2R", quietly = TRUE)){devtools::install_github("jbisanz/qiime2R")}
+if (!requireNamespace("breakaway", quietly = TRUE)){remotes::install_github("adw96/breakaway")}
+if (!requireNamespace("DivNet", quietly = TRUE)){remotes::install_github("adw96/DivNet")}
+if (!requireNamespace("ampvis2", quietly = TRUE)){remotes::install_github("MadsAlbertsen/ampvis2")}
+
+```
+
+```{r library loading, message=F, echo=T, eval=T, warning=T, include=F, cache=F}
+
+## load required packages
+library(phyloseq)
+library(qiime2R)
+library(tidyverse)
+library(magrittr)
+library(devtools)
+library(qiime2R)
+library(here)
+library(breakaway)
+library(DivNet)
+library(openxlsx)
+library(ape)
+library(vegan)
+library(ggtext)
+library(cowplot)
+library(RColorBrewer)
+library(microbiome)
+library(lme4)
+library(lmerTest)
+library(decontam)
+library(ampvis2)
+library(glue)
+library(lubridate)
+
+```
+
+```{r project organization, message=F, echo=F, eval=T, warning=F, include=F, cache=T}
+
+# project name
+proj = "OBER_proj2_Q14878_BODAC_seasonality"
+
+# create directories
+if(!dir.exists("figures")){dir.create("figures")}
+if(!dir.exists("output_data")){dir.create("output_data")} 
+if(!dir.exists("scripts")){dir.create("scripts")} 
+if(!dir.exists("scripts/QIIME2")){dir.create("scripts/QIIME2")} 
+```
+
+### Data import
+All input data have been created with QIIME2 and are imported in {r session_info()$platform$version}. QIIME2 scripts and parameter settings are found in separate bash files that can be found in this [Github repository](https://github.com/pietervanveelen/OBER_proj2_BODAC_seasonality).<br>
+
+```{r import data, message=F, echo=T, eval=T, warning=T, include=F, cache=F}
+
+#creating phyloseq objects with 
+physeq = qza_to_phyloseq(
+  features = "input_data/OBER_16S_515F926R_Q14878_SAM1-52_table.qza",
+  tree = "input_data/OBER_16S_515F926R_Q14878_SAM1-52_rooted-tree.qza",
+  taxonomy = "input_data/OBER_16S_515F926R_Q14878_SAM1-52_taxonomy_NB_classifier_SILVA_132_99_16S_515F-926R_QIIME2-2019.10.qza",
+    metadata = "input_data/OBER_16S_515F926R_Q14878_SAM1-52@metadata_completed_OBER_formatted.txt")
+
+
+```
+
+### Cleaning data set
+The following quality control steps are subsequently performed to clean the data: 1) tree resolving using ape package; 2) cleaning up the metadata; 3) replacing taxonomic strings that are empty, NA, metagenome, ambiguous taxa; 4) split blanks from samples; 
+
+```{r clean phylogeny, message=F, echo=F, eval=T, warning=T, include=F, cache=F}
+### resolve phylogenetic tree ###
+
+# evaluate tree topology
+is.binary(phy_tree(physeq)) # if FALSE --> polychotomy present (node has more than 2 tips)
+#TRUE
+
+# if FALSE:
+# resolve polychotomous nodes
+phy_tree_resolved <- multi2di(phy_tree(physeq))
+is.binary(phy_tree_resolved)
+# create new phy_tree
+tree2 <- phy_tree_resolved
+
+# subset_taxa(phy_tree_resolved, Kingdom ==  "Bacteria")
+
+# merge new phy_tree object with sample_data and otu_table into new phyloseq object
+psdata_OBER <- merge_phyloseq(otu_table(physeq), sample_data(physeq), tax_table(physeq), tree2)
+```
+
+```{r clean metatdata, message=F, echo=F, eval=T, warning=F, include=F, cache=F}
+
+# change all names to lowercase
+names(sample_data(psdata_OBER)) <- tolower(names(sample_data(psdata_OBER)))
+
+## metadata to be added
+# # clean-up metadata
+metadata_cleaned = 
+  sample_data(psdata_OBER) %>% 
+    as.data.frame() %>% 
+    as_tibble() %>% 
+    mutate(across(wet_weight:purified_quantus, ~parse_number(., locale = locale(decimal_mark = ",")))) %>% 
+    as.data.frame()
+metadata_cleaned$sampleid = metadata_cleaned$description
+metadata_cleaned = metadata_cleaned %>% select(sampleid, everything())
+metadata_cleaned = sample_data(metadata_cleaned)
+metadata_cleaned$sampleid = c(metadata_cleaned$sampleid[1:49], 
+                              "OBER.051.blank", "OBER.052.blank", "OBER.053.blank")
+sample_names(metadata_cleaned) = metadata_cleaned$sampleid
+
+# replace formatted metadata as sample_data in psdata_OBER
+sample_data(psdata_OBER) = sample_data(metadata_cleaned)
+
+
+```
+
+```{r clean taxanomy, message=F, echo=F, eval=T, warning=F, include=F, cache=F}
+
+## clean taxonomy tags with no information
+# specify NA taxon name tags to last known taxon names
+
+source("scripts/tax_clean.r")
+tax_clean(psdata_OBER)
+
+```
+
+```{r clean on taxonomy, message=F, echo=F, eval=F, warning=T, include=F, cache=F}
+
+# remove non-informative taxa
+old = ntaxa(psdata_OBER)
+new = psdata_OBER %>% 
+  subset_taxa(., Family != "Mitochondria") %>% 
+  subset_taxa(., Class != "Chloroplast") %>% 
+  #subset_taxa(., Phylum != "Kingdom_Bacteria") %>% # Archaea are retained
+  ntaxa()
+
+# number of ASVs removed:
+old-new # 1152 ASVs are removed
+
+```
+
+
+```{r filter blanks and samples, message=F, echo=F, eval=T, warning=T, include=F, cache=F}
+
+# full dataset
+psdata_OBER_blank <- subset_samples(psdata_OBER, sample_type == "blank") # subset NC blank samples
+psdata_OBER_blank <- prune_taxa(taxa_sums(psdata_OBER_blank) > 0, psdata_OBER_blank) #247 taxa found in blanks
+psdata_OBER <- subset_samples(psdata_OBER, sample_type != "activated_sludge" & sample_type != "blank") # subset only BODAC samples
+psdata_OBER <- prune_taxa(taxa_sums(psdata_OBER) > 0, psdata_OBER) # 4863 taxa found in BODAC samples
+
+# average and variation in coverage
+mean(sample_sums(psdata_OBER)) # = 58119
+summary(sample_sums(psdata_OBER))
+sum(sample_sums(psdata_OBER)) # 2789714 reads after filtering BODAC samples
+
+# number of reads in Blank (#538)
+sum(sample_sums(psdata_OBER_blank)) # across 3 NCs 17014 reads were detected
+
+```
+
+```{r calculate relative abundance, message=F, echo=F, eval=T, warning=T, include=F, cache=F, }
+
+# relative abundance data on BODAC samples
+psdata_OBER_rel <- transform_sample_counts(psdata_OBER, fun = function(x) x/sum(x)) # 4863 taxa (100% abundance)
+
+total_sum = sum(sample_sums(psdata_OBER)) # total reads left = 2789714
+
+# abundance filter at (0.01%, 0.1% 0.5%)
+psdata_OBER_0.01pct <- prune_taxa(taxa_sums(psdata_OBER_rel) > 0.0001, psdata_OBER)
+psdata_OBER_0.05pct <- prune_taxa(taxa_sums(psdata_OBER_rel) > 0.0005, psdata_OBER)
+psdata_OBER_0.1pct <- prune_taxa(taxa_sums(psdata_OBER_rel) > 0.001, psdata_OBER)
+
+# taxa remaining after filters
+ntaxa(psdata_OBER_0.01pct)  #4833 
+ntaxa(psdata_OBER_0.05pct)  #2880 
+ntaxa(psdata_OBER_0.1pct)   #2169 
+
+# associated relative abundances with filters
+num(100*(sum(sample_sums(psdata_OBER_0.01pct))/total_sum), digits = 3) # (99.995% abundance)
+num(100*(sum(sample_sums(psdata_OBER_0.05pct))/total_sum), digits = 3) # (98.99% abundance)
+num(100*(sum(sample_sums(psdata_OBER_0.1pct))/total_sum), digits = 3)  # (97.94% abundance)
+
+### choice to continue downstream analysis with abundance filter that retains ASVs with at least 0.1% of total read abundance. (i.e. retaining > 99% of sequences)
+psdata_OBER_unfiltered <- psdata_OBER # save unfiltered data
+psdata_OBER <- psdata_OBER_0.01pct # overwrite psdata_OBER for abundance filtered data
+
+```
+
+
+```{r rarefaction curves, message=F, echo=T, eval=T, warning=T, include=T, cache=F}
+# alpha rarefaction curve
+source("scripts/ampvis2_internals.r")
+source("scripts/amp_rankabundance.r")
+source("scripts/amp_rarecurve.r")
+
+# create combined metadata factor
+sample_data(psdata_OBER_unfiltered)$combined = factor(paste0(
+  sample_data(psdata_OBER_unfiltered)$filter_type, "-", 
+  sample_data(psdata_OBER_unfiltered)$sample_type, "-", 
+  sample_data(psdata_OBER_unfiltered)$sampling_time))
+
+# show plot
+amp_rarecurve(psdata_OBER_unfiltered, color = "combined", legend.position = "bottomright")
+
+# save plot
+pdf("figures/OBER_proj2_BODAC_rarefaction_curves.pdf", useDingbats = F, width = 6, height = 4)
+amp_rarecurve(psdata_OBER_unfiltered, color = "combined", legend.position = "bottomright")
+dev.off()
+
+#amp_rarecurve(psdata_OBER, color = "combined", legend.position = "bottomright")
+#amp_rarecurve(psdata_OBER, color = "Protocol", legend.position = "bottomright")
+
+# difference in sample coverage (5.75)
+max(sample_sums(psdata_OBER)/min(sample_sums(psdata_OBER)))
+
+
+```
+
+```{r avg_rarefy psdata, message=F, echo=T, eval=T, warning=T, include=T, cache=F}
+
+# summary statistics of dataset
+summary(sample_sums(psdata_OBER)) %>% 
+  enframe(name = "statistic", value = "read count") %>% 
+  as_tibble() %>% kableExtra::kbl(caption = "summary statistics of sequence data set", centering = T, align = "l") %>% kableExtra::kable_classic()
+
+
+# rarefy to 23345
+  # create subset frequency matrix
+  OBER_matrix <- as.matrix(t(otu_table(psdata_OBER)))
+  
+  # determine minimal sampling depth
+  min_sample <- min(sample_sums(psdata_OBER))
+  
+  # rarefaction taking mean of 100 iterations
+  set.seed(711)
+  # OBER_rare23345 <- avgdist(OBER_matrix, d_method="bray", sample = min_sample, iterations = 100)
+  # not using this: we also aim to calculate UniFrac
+  source("scripts/avgrarefy.r")
+  OBER_rare23345_table = avgrarefy(x=OBER_matrix, sample = min_sample, iterations = 100, seed = 711)
+
+# create phyloseq object with rarefied data  
+psdata_OBER_rare <- psdata_OBER
+otu_rare = otu_table(data.frame(t(OBER_rare23345_table)), taxa_are_rows = TRUE)
+otu_table(psdata_OBER_rare) <- otu_rare
+
+```
+
+
+```{r plot alpha diversity rare, message=F, echo=T, eval=T, warning=T, include=T, cache=F}
+
+# calculate alpha diversity: richness & Shannon
+
+# rarefied
+alpha <- estimate_richness(psdata_OBER_rare, measures = c("Observed", "Chao1", "Shannon"))
+alpha$sampleid <- row.names(alpha)
+metadata = metadata %>% 
+  mutate(sampleid = sampleID) %>% 
+  filter(sampleid %in% sample_names(psdata_OBER_rare))
+alpha <- inner_join(metadata, alpha, by = "sampleid")
+alpha$combined = factor(paste0(
+  alpha$filter_type, "-", 
+  alpha$sample_type, "-", 
+  alpha$sampling_time))
+
+alpha = 
+alpha %>% 
+  mutate(combined = factor(combined, 
+                           levels= c("BODAC_1-granule-before_backwash",
+                                  "BODAC_1-granule-after_backwash",
+                                  "BODAC_1-backwash-NA",
+                                  "BODAC_2-granule-before_backwash",
+                                  "BODAC_2-granule-after_backwash",
+                                  "BODAC_2-backwash-NA")))
+
+# summary statistics of number of samples per group
+alpha %>% 
+  group_by(filter_type, sampling_time, sample_type) %>% 
+  summarize(n=n())
+  
+# reformat dates
+alpha2 = alpha %>% mutate(date = lubridate::ymd(sampling_date), 
+                         sampling_time = if_else(is.na(sampling_time), "after", sampling_time), 
+                         month = as.numeric(as.character(month)),
+                         month = lubridate::month(month, label = T),
+                         year = as.factor(year), 
+                         sample_type = factor(sample_type, levels = c("granule", "backwash")))
+
+# plot alpha diversity
+Chao1 <- alpha2 %>% 
+ggplot(aes(x=month, y=Chao1, color = year, fill = year, shape = sampling_time)) +
+  #stat_summary(fun = median, geom = "bar", alpha = 0.5, position = position_dodge2(0.7, preserve = "single"), width=0.9) +
+  geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
+  scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
+  scale_fill_manual(values = c(brewer.pal(6, "Dark2"))) +
+  scale_shape_manual(values = c(19,17, 2)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.text = element_markdown(),
+        legend.key.size = unit(7, "pt"),
+        axis.ticks.x = element_blank(), 
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        legend.position = "right",
+        panel.border = element_rect(colour = "black", fill = NA)) +
+  facet_wrap(~ filter_type + sample_type)
+
+Shannon <- alpha2 %>% 
+ggplot(aes(x=month, y=Shannon, color = year, fill = year, shape = sampling_time)) +
+  #stat_summary(fun = median, geom = "bar", alpha = 0.5, position = position_dodge2(0.7, preserve = "single"), width=0.9) +
+  geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
+  scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
+  scale_fill_manual(values = c(brewer.pal(6, "Dark2"))) +
+  scale_shape_manual(values = c(19,17, 2)) +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(legend.text = element_markdown(),
+        legend.key.size = unit(7, "pt"),
+        axis.ticks.x = element_blank(), 
+        strip.background = element_blank(),
+        strip.placement = "outside",
+        legend.position = "right",
+        panel.border = element_rect(colour = "black", fill = NA)) +
+  facet_wrap(~ filter_type + sample_type)
+
+# create plot
+prow = plot_grid(
+  plot_grid(Chao1 + theme(legend.position = "none"), 
+            Shannon + theme(legend.position = "none"),
+                   align = "hv",
+                   labels = c("A", "B"),
+                   hjust = -1, 
+                   ncol = 2),
+  get_legend(Chao1), 
+  ncol = 2 , 
+  rel_widths = c(6, 1))
+
+# save plot
+ggsave(prow, filename = "figures/plot_alpha_div_OBER_rare23345.pdf", width = 11, height = 6)
+
+# show plot
+prow
+
+```
+```{r loss of alpha diversity, message=F, echo=T, eval=T, warning=T, include=T, cache=F, fig.width=4, fig.height=2}
+
+# calculate loss of alpha diversity as a result of backwashing
+chao_loss = 
+alpha2 %>% 
+  filter(sample_type == "granule") %>% 
+  select(Chao1, Shannon, filter_type, sampling_time, month, year) %>% 
+  pivot_longer(c(Chao1, Shannon), names_to = "alpha_metric", values_to = "value") %>% 
+  pivot_wider(names_from = "sampling_time", values_from = "value") %>% 
+  mutate(loss = before_backwash - after_backwash) %>% 
+  filter(alpha_metric == "Chao1") %>% 
+  ggplot(aes(x = month, y = loss, color = year, fill = year)) +
+    geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
+    scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_fill_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_shape_manual(values = c(19,17, 2)) +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(legend.text = element_markdown(),
+          legend.key.size = unit(7, "pt"),
+          axis.ticks.x = element_blank(), 
+          strip.background = element_blank(),
+          strip.placement = "outside",
+          legend.position = "right",
+          panel.border = element_rect(colour = "black", fill = NA)) +
+    facet_wrap(~ filter_type) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkred") +
+  labs(y="Difference in ASV richness due to backwashing",
+       x = NULL)
+  
+shannon_loss = 
+alpha2 %>% 
+  filter(sample_type == "granule") %>% 
+  select(Chao1, Shannon, filter_type, sampling_time, month, year) %>% 
+  pivot_longer(c(Chao1, Shannon), names_to = "alpha_metric", values_to = "value") %>% 
+  pivot_wider(names_from = "sampling_time", values_from = "value") %>% 
+  mutate(loss = before_backwash - after_backwash) %>% 
+  filter(alpha_metric == "Shannon") %>% 
+  ggplot(aes(x = month, y = loss, color = year, fill = year)) +
+    geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
+    scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_fill_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_shape_manual(values = c(19,17, 2)) +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(legend.text = element_markdown(),
+          legend.key.size = unit(7, "pt"),
+          axis.ticks.x = element_blank(), 
+          strip.background = element_blank(),
+          strip.placement = "outside",
+          legend.position = "right",
+          panel.border = element_rect(colour = "black", fill = NA)) +
+    facet_wrap(~ filter_type) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkred") +
+  labs(y = "Difference in Shannon due to backwashing",
+       x = NULL)
+
+
+# create plot
+prow_loss = plot_grid(
+  plot_grid(chao_loss + theme(legend.position = "none"), 
+            shannon_loss + theme(legend.position = "none"),
+                   align = "hv",
+                   labels = c("A", "B"),
+                   hjust = -1, 
+                   ncol = 2),
+  get_legend(chao_loss), 
+  ncol = 2 , 
+  rel_widths = c(6, 1))
+
+# save plot
+ggsave(prow_loss, filename = "figures/plot_alpha_loss_in_granules_backwashing_OBER_rare23345.pdf", width = 11, height = 4)
+
+# show plot
+prow_loss
+
+```
+
+

@@ -36,6 +36,10 @@ if (!requireNamespace("qiime2R", quietly = TRUE)){devtools::install_github("jbis
 if (!requireNamespace("breakaway", quietly = TRUE)){remotes::install_github("adw96/breakaway")}
 if (!requireNamespace("DivNet", quietly = TRUE)){remotes::install_github("adw96/DivNet")}
 if (!requireNamespace("ampvis2", quietly = TRUE)){remotes::install_github("MadsAlbertsen/ampvis2")}
+if (!require("DECIPHER", quietly = TRUE)) {BiocManager::install("DECIPHER", version = "3.12")}
+if (!requireNamespace("ensembleTax", quietly = TRUE)){install.packages("ensembleTax")}
+
+
 
 ```
 
@@ -64,6 +68,8 @@ library(decontam)
 library(ampvis2)
 library(glue)
 library(lubridate)
+library(DECIPHER)
+library(ensembleTax)
 
 ```
 
@@ -143,7 +149,7 @@ sample_data(psdata_OBER) = sample_data(metadata_cleaned)
 
 ```
 
-```{r clean taxanomy, message=F, echo=F, eval=T, warning=F, include=F, cache=F}
+```{r clean taxanomy naming, message=F, echo=F, eval=T, warning=F, include=F, cache=F}
 
 ## clean taxonomy tags with no information
 # specify NA taxon name tags to last known taxon names
@@ -153,18 +159,133 @@ tax_clean(psdata_OBER)
 
 ```
 
+```{r taxonomy classification of non-bacterial ASVs, message=F, echo=F, eval=F, warning=F, include=F, cache=F}
+# save ASV feature IDs without phylum assignments as vector
+no_phylum_ASVs = 
+  psdata_OBER %>% 
+  subset_taxa(is.na(Phylum)) %>% 
+  psmelt() %>% 
+  pull(OTU) %>% 
+  unique()
+
+View(tax_table(prune_taxa(taxa_names(psdata_OBER) %in% no_phylum_ASVs, psdata_OBER)))
+
+# read ASV feature representative sequences as a DNAStringSet
+rep_seqs = qiime2R::read_qza("input_data/OBER_16S_515F926R_Q14878_SAM1-52_representative_sequences.qza")
+rep_seqs = rep_seqs$data 
+
+# subset the representative sequences for ASVs without Phylum assignment
+no_phylum_ASVs_rep_seqs = rep_seqs[no_phylum_ASVs]
+
+
+### Taxonomy assignments using various reference databases
+# Download from http://www2.decipher.codes/Downloads.html
+# Use functions from https://search.r-project.org/CRAN/refmans/ensembleTax/html/idtax2df.html
+# and https://git.wageningenur.nl/steen176/microbial/-/blob/master/vignettes/2_Taxonomic_assignment.Rmd
+
+## SILVA 138
+# load the SILVA 138 trainingset
+#load("~/Wetsus_Projects/PVEE/Data_analyses/IDTAXA_DECIPHER_dbs/SILVA_SSU_r138_2019.rdata") 
+
+#ids_SILVA <- IdTaxa(no_phylum_ASVs_rep_seqs, trainingSet, strand="both", processors=10, verbose=TRUE) 
+ids_SILVA %>% idtax2df(
+                    .,
+                    db = "silva", # "pr2", "silva", "rdp", or "gg"
+                    ranks = rank_names(psdata_OBER),
+                    boot = 0,
+                    rubric = NULL, # A DNAStringset can be added to link rep seqs to taxonomy information
+                    return.conf = FALSE) # if TRUE the confidence scores are added, output not df
+  #                  %>% 
+  # filter(!is.na(family))
+
+## RDP Ribosomal Database Project (16S)
+# load the RDP v18 July 2020 trainingset
+#load("~/Wetsus_Projects/PVEE/Data_analyses/IDTAXA_DECIPHER_dbs/RDP_v18-mod_July2020.rdata") 
+
+# run IDTAXA from DECIPHER package
+#ids_RDP <- IdTaxa(no_phylum_ASVs_rep_seqs, trainingSet, strand="both", processors=10, verbose=TRUE) 
+ids_RDP %>% idtax2df(
+                    .,
+                    db = "rdp", # "pr2", "silva", "rdp", or "gg"
+                    ranks = rank_names(psdata_OBER),
+                    boot = 0,
+                    rubric = NULL, # A DNAStringset can be added to link rep seqs to taxonomy information
+                    return.conf = FALSE) # if TRUE the confidence scores are added, output not df
+  #                  %>% 
+  # filter(!is.na(family))
+
+## PR2 protists rRNA database
+# load the PR2 v.4 March 2021 trainingset
+#load("~/Wetsus_Projects/PVEE/Data_analyses/IDTAXA_DECIPHER_dbs/PR2_v4_13_March2021.rdata") 
+
+#ids_pr2 <- IdTaxa(no_phylum_ASVs_rep_seqs, trainingSet, strand="both", processors=10, verbose=TRUE) 
+ids_pr2 %>% idtax2df(
+                    .,
+                    db = "rdp", # "pr2", "silva", "rdp", or "gg"
+                    ranks = NULL,
+                    boot = 60,
+                    rubric = NULL, # A DNAStringset can be added to link rep seqs to taxonomy information
+                    return.conf = FALSE) # if TRUE the confidence scores are added, output not df
+  #                  %>% 
+  # filter(!is.na(family))
+
+
+# Convert the output object of class "Taxa" to a matrix analogous to the output from assignTaxonomy
+ranks <- c("domain", "phylum", "class", "order", "family", "genus", "species") 
+taxa_RDP = t(sapply(ids_RDP, function(x) {
+        m <- match(ranks, x$rank)
+        taxa <- x$taxon[m]
+        taxa[startsWith(taxa, "unclassified_")] <- NA
+        taxa
+}))
+taxa_SILVA = t(sapply(ids_SILVA, function(x) {
+        m <- match(ranks, x$rank)
+        taxa <- x$taxon[m]
+        taxa[startsWith(taxa, "unclassified_")] <- NA
+        taxa
+}))
+taxa_PR2 = t(sapply(ids_pr2, function(x) {
+        m <- match(ranks, x$rank)
+        taxa <- x$taxon[m]
+        taxa[startsWith(taxa, "unclassified_")] <- NA
+        taxa
+}))
+colnames(taxa_RDP) <- c(rank_names(psdata_OBER))
+colnames(taxa_SILVA) <- c(rank_names(psdata_OBER))
+colnames(taxa_PR2) <- c(rank_names(psdata_OBER))
+as_tibble(taxa_RDP, rownames = "OTU")
+taxa = bind_rows(as_tibble(taxa_RDP, rownames = "OTU") %>% 
+                   mutate(db = rep(str_extract("ids_RDP", pattern = "[^_]+$"), nrow(taxa_RDP))),
+                 as_tibble(taxa_SILVA, rownames = "OTU") %>% 
+                   mutate(db = rep(str_extract("ids_SILVA", pattern = "[^_]+$"), nrow(taxa_SILVA))),
+                 as_tibble(taxa_PR2, rownames = "OTU") %>% 
+                   mutate(db = rep(str_extract("ids_PR2", pattern = "[^_]+$"), nrow(taxa_PR2)))
+                 )
+taxa = taxa %>% select(db, OTU, everything())
+taxa_resolved = taxa %>% arrange(OTU) %>% filter(!is.na(Phylum))
+taxa_resolved = taxa_resolved %>% mutate(Kingdom = if_else(is.na(Kingdom), "Eukaryota", Kingdom))
+
+```
+
 ```{r clean on taxonomy, message=F, echo=F, eval=F, warning=T, include=F, cache=F}
 
 # remove non-informative taxa
 old = ntaxa(psdata_OBER)
 new = psdata_OBER %>% 
-  subset_taxa(., Family != "Mitochondria") %>% 
-  subset_taxa(., Class != "Chloroplast") %>% 
-  #subset_taxa(., Phylum != "Kingdom_Bacteria") %>% # Archaea are retained
-  ntaxa()
-
+  subset_taxa(., Kingdom != "Eukaryota") %>% # 0 ASVs lost
+  subset_taxa(., !is.na(Phylum)) %>% # 166 ASVs lost (most likely Eurkaryotes, see SI)
+  subset_taxa(., Family != "Mitochondria") %>% # 986 ASVs lost
+  subset_taxa(., Class != "Chloroplast") %>% # 0 ASVs lost
+ntaxa()
 # number of ASVs removed:
 old-new # 1152 ASVs are removed
+
+# now continue with fitered psdata_OBER:
+psdata_OBER = psdata_OBER %>% 
+  subset_taxa(., Kingdom != "Eukaryota") %>% # 0 ASVs lost
+  subset_taxa(., !is.na(Phylum)) %>% # 166 ASVs lost (most likely Eurkaryotes, see SI)
+  subset_taxa(., Family != "Mitochondria") %>% # 986 ASVs lost
+  subset_taxa(., Class != "Chloroplast") # 0 ASVs lost
 
 ```
 
@@ -175,24 +296,24 @@ old-new # 1152 ASVs are removed
 psdata_OBER_blank <- subset_samples(psdata_OBER, sample_type == "blank") # subset NC blank samples
 psdata_OBER_blank <- prune_taxa(taxa_sums(psdata_OBER_blank) > 0, psdata_OBER_blank) #247 taxa found in blanks
 psdata_OBER <- subset_samples(psdata_OBER, sample_type != "activated_sludge" & sample_type != "blank") # subset only BODAC samples
-psdata_OBER <- prune_taxa(taxa_sums(psdata_OBER) > 0, psdata_OBER) # 4863 taxa found in BODAC samples
+psdata_OBER <- prune_taxa(taxa_sums(psdata_OBER) > 0, psdata_OBER) # 6119 taxa found in BODAC samples
 
 # average and variation in coverage
-mean(sample_sums(psdata_OBER)) # = 58119
+mean(sample_sums(psdata_OBER)) # = 49334
 summary(sample_sums(psdata_OBER))
-sum(sample_sums(psdata_OBER)) # 2789714 reads after filtering BODAC samples
+sum(sample_sums(psdata_OBER)) # 2368027 reads after filtering BODAC samples
 
 # number of reads in Blank (#538)
-sum(sample_sums(psdata_OBER_blank)) # across 3 NCs 17014 reads were detected
+sum(sample_sums(psdata_OBER_blank)) # across 3 NCs 13565 reads were detected
 
 ```
 
 ```{r calculate relative abundance, message=F, echo=F, eval=T, warning=T, include=F, cache=F, }
 
 # relative abundance data on BODAC samples
-psdata_OBER_rel <- transform_sample_counts(psdata_OBER, fun = function(x) x/sum(x)) # 4863 taxa (100% abundance)
+psdata_OBER_rel <- transform_sample_counts(psdata_OBER, fun = function(x) x/sum(x)) # 6119 taxa (100% abundance)
 
-total_sum = sum(sample_sums(psdata_OBER)) # total reads left = 2789714
+total_sum = sum(sample_sums(psdata_OBER)) # total reads left = 2368027
 
 # abundance filter at (0.01%, 0.1% 0.5%)
 psdata_OBER_0.01pct <- prune_taxa(taxa_sums(psdata_OBER_rel) > 0.0001, psdata_OBER)
@@ -200,14 +321,14 @@ psdata_OBER_0.05pct <- prune_taxa(taxa_sums(psdata_OBER_rel) > 0.0005, psdata_OB
 psdata_OBER_0.1pct <- prune_taxa(taxa_sums(psdata_OBER_rel) > 0.001, psdata_OBER)
 
 # taxa remaining after filters
-ntaxa(psdata_OBER_0.01pct)  #4833 
-ntaxa(psdata_OBER_0.05pct)  #2880 
-ntaxa(psdata_OBER_0.1pct)   #2169 
+ntaxa(psdata_OBER_0.01pct)  #4479 
+ntaxa(psdata_OBER_0.05pct)  #2749 
+ntaxa(psdata_OBER_0.1pct)   #2081 
 
 # associated relative abundances with filters
-num(100*(sum(sample_sums(psdata_OBER_0.01pct))/total_sum), digits = 3) # (99.995% abundance)
-num(100*(sum(sample_sums(psdata_OBER_0.05pct))/total_sum), digits = 3) # (98.99% abundance)
-num(100*(sum(sample_sums(psdata_OBER_0.1pct))/total_sum), digits = 3)  # (97.94% abundance)
+num(100*(sum(sample_sums(psdata_OBER_0.01pct))/total_sum), digits = 3) # (99.831% abundance)
+num(100*(sum(sample_sums(psdata_OBER_0.05pct))/total_sum), digits = 3) # (98.914% abundance)
+num(100*(sum(sample_sums(psdata_OBER_0.1pct))/total_sum), digits = 3)  # (97.919% abundance)
 
 ### choice to continue downstream analysis with abundance filter that retains ASVs with at least 0.1% of total read abundance. (i.e. retaining > 99% of sequences)
 psdata_OBER_unfiltered <- psdata_OBER # save unfiltered data
@@ -239,9 +360,10 @@ dev.off()
 #amp_rarecurve(psdata_OBER, color = "combined", legend.position = "bottomright")
 #amp_rarecurve(psdata_OBER, color = "Protocol", legend.position = "bottomright")
 
-# difference in sample coverage (5.75)
+# difference in sample coverage (7.39)
 max(sample_sums(psdata_OBER)/min(sample_sums(psdata_OBER)))
 
+sample_sums(psdata_OBER) %>% as_tibble %>% arrange() %>% tail
 
 ```
 
@@ -253,7 +375,7 @@ summary(sample_sums(psdata_OBER)) %>%
   as_tibble() %>% kableExtra::kbl(caption = "summary statistics of sequence data set", centering = T, align = "l") %>% kableExtra::kable_classic()
 
 
-# rarefy to 23345
+# rarefy to 13092
   # create subset frequency matrix
   OBER_matrix <- as.matrix(t(otu_table(psdata_OBER)))
   
@@ -262,14 +384,14 @@ summary(sample_sums(psdata_OBER)) %>%
   
   # rarefaction taking mean of 100 iterations
   set.seed(711)
-  # OBER_rare23345 <- avgdist(OBER_matrix, d_method="bray", sample = min_sample, iterations = 100)
+  # OBER_rare13092 <- avgdist(OBER_matrix, d_method="bray", sample = min_sample, iterations = 100)
   # not using this: we also aim to calculate UniFrac
   source("scripts/avgrarefy.r")
-  OBER_rare23345_table = avgrarefy(x=OBER_matrix, sample = min_sample, iterations = 100, seed = 711)
+  OBER_rare13092_table = avgrarefy(x=OBER_matrix, sample = min_sample, iterations = 100, seed = 711)
 
 # create phyloseq object with rarefied data  
 psdata_OBER_rare <- psdata_OBER
-otu_rare = otu_table(data.frame(t(OBER_rare23345_table)), taxa_are_rows = TRUE)
+otu_rare = otu_table(data.frame(t(OBER_rare13092_table)), taxa_are_rows = TRUE)
 otu_table(psdata_OBER_rare) <- otu_rare
 
 ```
@@ -364,7 +486,7 @@ prow = plot_grid(
   rel_widths = c(6, 1))
 
 # save plot
-ggsave(prow, filename = "figures/plot_alpha_div_OBER_rare23345.pdf", width = 11, height = 6)
+ggsave(prow, filename = "figures/plot_alpha_div_OBER_rare13092.pdf", width = 11, height = 6)
 
 # show plot
 prow
@@ -441,11 +563,384 @@ prow_loss = plot_grid(
   rel_widths = c(6, 1))
 
 # save plot
-ggsave(prow_loss, filename = "figures/plot_alpha_loss_in_granules_backwashing_OBER_rare23345.pdf", width = 11, height = 4)
+ggsave(prow_loss, filename = "figures/plot_alpha_loss_in_granules_backwashing_OBER_rare13092.pdf", width = 11, height = 4)
 
 # show plot
 prow_loss
 
 ```
+
+### ADD Alpha div on Genus level
+
+### ADD Alpha div statistics
+
+### Beta div using avgrare
+
+```{r calculate avg beta diversity ASV, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+### Beta diversity analysis first
+# input data  = psdata_OBER
+psdata_OBER_beta <-
+  psdata_OBER %>% 
+  subset_samples(sample_type == "granule") %>% 
+  prune_taxa(taxa_sums(.)>0, .)
+
+# create subset frequency matrix
+OBER_matrix <- as.matrix(t(otu_table(psdata_OBER_beta)))
+
+# determine minimal sampling depth
+min_sample <- min(sample_sums(psdata_OBER_beta))
+
+# rarefaction taking mean of 100 iterations
+set.seed(711)
+OBER_rare13092 <- avgdist(OBER_matrix, d_method="bray", sample = min_sample, iterations = 100)
+OBER_rare13092_jac <- avgdist(OBER_matrix, d_method="jaccard", sample = min_sample, iterations = 100)
+
+source("scripts/avgrarefy.r")
+OBER_rare13092_table = avgrarefy(x=OBER_matrix, sample = min_sample, iterations = 100, seed = 711)
+
+```
+
+```{r beta diversity without ordination}
+
+# avgdist Bray curtis dist matrix to use:
+class(OBER_rare13092)
+
+# reshape to long format
+bray_long = 
+OBER_rare13092 %>% 
+  as.matrix() %>% 
+  as_tibble(rownames = "sample_a") %>% 
+  pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
+  mutate(metric = "braycurtis")
+
+jaccard_long =
+OBER_rare13092_jac %>% 
+  as.matrix() %>% 
+  as_tibble(rownames = "sample_a") %>% 
+  pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
+  mutate(metric = "jaccard")
+
+
+# define consecutive sampling moments
+consecutive_months = c("Mar_to_Jun", "Jun_to_Sep", "Sep_to_Dec", "Dec_to_Mar")
+consecutive_monthsYears = c("Sep_2019_to_Dec_2019",
+                        "Dec_2019_to_Mar_2020",
+                        "Mar_2020_to_Jun_2020",
+                        "Jun_2020_to_Sep_2020",
+                        "Sep_2020_to_Dec_2020",
+                        "Dec_2020_to_Mar_2021",
+                        "Mar_2021_to_Jun_2021",
+                        "Jun_2021_to_Sep_2021")
+
+# reshape distance data and combine with metadata
+all_dists =
+bind_rows(bray_long, jaccard_long) %>% 
+  filter(sample_a != sample_b) %>% # remove self-comparisons
+  inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_a" = "sampleID")) %>% 
+  mutate(month_year = paste0(month,"_", year)) %>% 
+  rename_with(., .fn = ~paste0(.,"_a"), .cols = names(.)[-c(1:4)]) %>% # tag metadata to first sample
+  inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_b" = "sampleID")) %>%
+  mutate(month_year = paste0(month,"_", year)) %>% 
+  rename_with(., .fn = ~paste0(.,"_b"), .cols = names(.)[c(14:ncol(.))]) %>% # tag metadata to second sample
+  mutate(consec_months = paste0(month_a,"_to_", month_b)) %>% 
+  mutate(consec_monthsY_a = paste0(month_year_a,"_to_", month_year_b)) %>%
+  filter(consec_months %in% consecutive_months) %>% # select only distances between consecutive samplings
+  mutate(consec_months_year_a = factor(paste0(consec_months,"_in_", year_a), 
+                                       levels = c("Sep_to_Dec_in_2019",
+                                                  "Dec_to_Mar_in_2019",
+                                                  "Mar_to_Jun_in_2020",
+                                                  "Jun_to_Sep_in_2020",
+                                                  "Sep_to_Dec_in_2020",
+                                                  "Dec_to_Mar_in_2020",
+                                                  "Mar_to_Jun_in_2021",
+                                                  "Jun_to_Sep_in_2021"))) %>% 
+  filter(consec_monthsY_a %in% consecutive_monthsYears) %>% 
+  mutate(consec_monthsY_a = factor(consec_monthsY_a, 
+                                       levels = consecutive_monthsYears)) %>% 
+  filter(sample_type_a == "granule", # select only within sample-type comparisons
+         sample_type_b == "granule", # select only within sample-type comparisons
+         filter_type_a == filter_type_b, # select only within filter-type comparisons
+         sampling_time_a == "before_backwash", # select only within backwashing-subgroup comparisons
+         sampling_time_b == "before_backwash",
+         year_a == year_b # compare only samples within a year
+         ) 
+
+all_dists %>% 
+  ggplot(aes(x = consec_monthsY_a, y = distance, color = year_a)) +
+    geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
+    scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_fill_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_shape_manual(values = c(19,17, 2)) +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    theme(legend.text = element_markdown(),
+          legend.key.size = unit(7, "pt"),
+          axis.ticks.x = element_blank(), 
+          strip.background = element_blank(),
+          strip.placement = "outside",
+          legend.position = "right",
+          panel.border = element_rect(colour = "black", fill = NA)) +
+    facet_wrap(~ metric + filter_type_a) +
+    labs(y = "Distance",
+         x = NULL)
+
+
+
+```
+
+```{r calculate avg beta diversity Family, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+### Beta diversity analysis first
+# input data  = psdata_OBER
+psdata_OBER_beta_fam <-
+  psdata_OBER %>% 
+  subset_samples(sample_type == "granule") %>% 
+  prune_taxa(taxa_sums(.)>0, .) %>% 
+  tax_glom(., "Family")
+
+# create subset frequency matrix
+OBER_matrix_fam <- as.matrix(t(otu_table(psdata_OBER_beta_fam)))
+
+# determine minimal sampling depth
+min_sample <- min(sample_sums(psdata_OBER_beta_fam))
+
+# rarefaction taking mean of 100 iterations
+set.seed(711)
+OBER_rare13092_fam <- avgdist(OBER_matrix_fam, d_method="bray", sample = min_sample, iterations = 100)
+source("scripts/avgrarefy.r")
+OBER_rare13092_table_fam = avgrarefy(x=OBER_matrix_fam, sample = min_sample, iterations = 100, seed = 711)
+
+```
+
+
+```{r plot avg beta diversity ASV, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+# PCoA on rarefied data
+pcoa <- cmdscale(OBER_rare13092, k = 2, eig = T, add = T)
+positions <- pcoa$points
+colnames(positions) <- c("pcoa1", "pcoa2")
+ 
+# PCoA species scores
+spe.wa <- wascores(pcoa$points[,1:2], OBER_rare13092_table)
+colnames(spe.wa) <- c("pcoa1", "pcoa2")
+
+# Add taxonomic information to species scores
+tax_beta_div <-
+  tax_table(psdata_OBER_beta) %>% 
+  as.data.frame() %>% 
+  as_tibble(rownames = "taxon")
+spe.scores <- spe.wa %>% 
+  as_tibble(rownames = "taxon") %>% 
+  inner_join(., tax_beta_div, by = "taxon") %>% 
+  select(taxon, Family, Genus, pcoa1, pcoa2)
+  
+
+# percent explained by axes
+percent_explained <- 100* pcoa$eig / sum(pcoa$eig)
+
+# percent explained labeling
+pretty_pe <- format(round(percent_explained[1:2], digits = 1), nsmall =1, trim=T)
+
+# axis labels 
+labs <- c(glue("PCoA 1 ({pretty_pe[1]}%)"),
+          glue("PCoA 2 ({pretty_pe[2]}%)"))
+
+# select top 25 abundant taxa across the dataset
+source("scripts/ps_abund_top_info.r")
+topn = 25
+ASV_info_abund <- ps_abund_top_info(psdata_OBER_beta, top_nr = topn)
+
+# filteer species scores for top 10 taxa
+spe.scores_top = spe.scores %>% filter(taxon %in% ASV_info_abund$taxon) %>% 
+  mutate(Genus = if_else(is.na(Genus), paste0("Genus of ", Family), Genus)) %>% 
+  inner_join(., ASV_info_abund %>% select(taxon, abund), by = "taxon") %>% 
+  mutate(abund_sqrt_1000r = sqrt(abund/1000))
+
+# plot samples and top25 species scores
+plot_beta_tbl <- positions %>%  
+  as_tibble(rownames = "samples") %>% 
+  inner_join(., metadata_cleaned, by = c("samples"="sampleid")) 
+
+# view number of samples per group
+# plot_beta_tbl %>%
+#   group_by(filter_type, sample_type, sampling_time) %>%
+#   summarise(n=n())
+
+plot_beta_all = 
+plot_beta_tbl %>% 
+  ggplot(aes(x=pcoa1, y=pcoa2)) +
+  geom_vline(xintercept = 0, linetype = 3, color = "grey80") +
+  geom_hline(yintercept = 0, linetype = 3, color = "grey80") +
+  geom_point(aes(shape=filter_type, color=filter_type, fill=filter_type)) +
+  geom_segment(
+      data = spe.scores_top,
+      aes(
+        x = 0, 
+        y = 0,
+        xend = pcoa1, 
+        yend = pcoa2
+      ),
+      arrow = arrow(length = unit(1, "mm")),
+      color = "grey80") +
+  # geom_point(data = spe.scores_top, 
+  #            aes(x=pcoa1, 
+  #                y=pcoa2, 
+  #                label=Genus, 
+  #                size = abund_sqrt_1000r, 
+  #                alpha=1-(1/abund_sqrt_1000r)
+  #                ), 
+  #            color = "grey80",
+  #            show.legend = c(alpha = NULL)) +
+  geom_text(data=spe.scores_top, 
+            aes(label=Genus, 
+            hjust = ifelse(pcoa1>=0, 0, 1),
+            nudge_x = ifelse(pcoa1>=0, -0.5, 0.5)),
+            color = "grey70", 
+            size = 4, 
+            check_overlap = F) +
+  scale_shape_manual(values = c(21, 22, 24, 1, 0, 2)) +
+  scale_color_manual(values = brewer.pal(6, "Dark2")) +
+  scale_fill_manual(values = brewer.pal(6, "Dark2"), guide= "none") +
+  # guides(shape = guide_legend(title = "Condition & Timepoint",  override.aes = list(
+  #   shape = c(21, 22, 24, 1, 0, 2),
+  #   fill = c(rep("black", 3), rep("white", 3))))) +
+  labs(x = labs[1], y=labs[2]) +
+  # coord_cartesian(xlim = c(-0.5, NA)) +
+  theme_classic() +
+  facet_wrap(~year, ncol = 3) +
+  theme(strip.background = element_rect(colour=NA, fill=NA))
+
+
+# extract and compile plots and legend 
+beta_figs = plot_grid(plot_beta_all + theme(legend.position = "none"),
+                       get_legend(plot_beta_all),
+                       ncol = 2,
+                       rel_widths = c(3,0.5))
+
+# show plpt
+beta_figs
+
+# save plot
+ggsave(plot = beta_figs, 
+       file = stringr::str_glue("figures/{proj}_beta_div_PCoA_BrayCurtis_topN{topn}_granules.pdf"), 
+       width = 8, 
+       height = 6)
+   
+```  
+
+```{r plot avg beta diversity Family, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+# PCoA on rarefied data
+pcoa_fam <- cmdscale(OBER_rare13092_fam, k = 2, eig = T, add = T)
+positions_fam <- pcoa_fam$points
+colnames(positions_fam) <- c("pcoa1", "pcoa2")
+ 
+# PCoA species scores
+spe.wa_fam <- wascores(pcoa_fam$points[,1:2], OBER_rare13092_table_fam)
+colnames(spe.wa_fam) <- c("pcoa1", "pcoa2")
+
+# Add taxonomic information to species scores
+tax_beta_div_fam <-
+  tax_table(psdata_OBER_beta_fam) %>% 
+  as.data.frame() %>% 
+  as_tibble(rownames = "taxon")
+spe.scores_fam <- spe.wa_fam %>% 
+  as_tibble(rownames = "taxon") %>% 
+  inner_join(., tax_beta_div_fam, by = "taxon") %>% 
+  select(taxon, Family, Genus, pcoa1, pcoa2)
+  
+
+# percent explained by axes
+percent_explained_fam <- 100* pcoa_fam$eig / sum(pcoa_fam$eig)
+
+# percent explained labeling
+pretty_pe_fam <- format(round(percent_explained_fam[1:2], digits = 1), nsmall =1, trim=T)
+
+# axis labels 
+labs_fam <- c(glue("PCoA 1 ({pretty_pe_fam[1]}%)"),
+          glue("PCoA 2 ({pretty_pe_fam[2]}%)"))
+
+# select top 15 abundant taxa across the dataset
+source("scripts/ps_abund_top_info.r")
+topn = 15
+ASV_info_abund_fam <- ps_abund_top_info(psdata_OBER_beta_fam, top_nr = topn)
+
+# filteer species scores for top 10 taxa
+spe.scores_top_fam = spe.scores_fam %>% filter(taxon %in% ASV_info_abund_fam$taxon) %>% 
+  mutate(Genus = if_else(is.na(Genus), paste0("Genus of ", Family), Genus)) %>% 
+  inner_join(., ASV_info_abund_fam %>% select(taxon, abund), by = "taxon") %>% 
+  mutate(abund_sqrt_1000r = sqrt(abund/1000))
+
+# plot samples and top25 species scores
+plot_beta_tbl_fam <- positions_fam %>%  
+  as_tibble(rownames = "samples") %>% 
+  inner_join(., metadata_cleaned, by = c("samples"="sampleid")) 
+
+# view number of samples per group
+# plot_beta_tbl %>%
+#   group_by(filter_type, sample_type, sampling_time) %>%
+#   summarise(n=n())
+
+plot_beta_all_fam = 
+plot_beta_tbl_fam %>% 
+  ggplot(aes(x=pcoa1, y=pcoa2)) +
+  geom_vline(xintercept = 0, linetype = 3, color = "grey80") +
+  geom_hline(yintercept = 0, linetype = 3, color = "grey80") +
+  geom_point(aes(shape=filter_type, color=filter_type, fill=filter_type)) +
+  geom_segment(
+      data = spe.scores_top_fam,
+      aes(
+        x = 0, 
+        y = 0,
+        xend = pcoa1, 
+        yend = pcoa2
+      ),
+      arrow = arrow(length = unit(1, "mm")),
+      color = "grey80") +
+  # geom_point(data = spe.scores_top, 
+  #            aes(x=pcoa1, 
+  #                y=pcoa2, 
+  #                label=Genus, 
+  #                size = abund_sqrt_1000r, 
+  #                alpha=1-(1/abund_sqrt_1000r)
+  #                ), 
+  #            color = "grey80",
+  #            show.legend = c(alpha = NULL)) +
+  geom_text(data=spe.scores_top_fam, 
+            aes(label=Genus, 
+            hjust = ifelse(pcoa1>=0, 0, 1),
+            nudge_x = ifelse(pcoa1>=0, -0.5, 0.5)),
+            color = "grey70", 
+            size = 4, 
+            check_overlap = F) +
+  scale_shape_manual(values = c(21, 22, 24, 1, 0, 2)) +
+  scale_color_manual(values = brewer.pal(6, "Dark2")) +
+  scale_fill_manual(values = brewer.pal(6, "Dark2"), guide= "none") +
+  # guides(shape = guide_legend(title = "Condition & Timepoint",  override.aes = list(
+  #   shape = c(21, 22, 24, 1, 0, 2),
+  #   fill = c(rep("black", 3), rep("white", 3))))) +
+  labs(x = labs[1], y=labs[2]) +
+  # coord_cartesian(xlim = c(-0.5, NA)) +
+  theme_classic() +
+  facet_wrap(~year, ncol = 3) +
+  theme(strip.background = element_rect(colour=NA, fill=NA))
+
+
+# extract and compile plots and legend 
+beta_figs_fam = plot_grid(plot_beta_all_fam + theme(legend.position = "none"),
+                       get_legend(plot_beta_all_fam),
+                       ncol = 2,
+                       rel_widths = c(3,0.5))
+
+# show plpt
+beta_figs_fam
+
+# save plot
+ggsave(plot = beta_figs_fam, 
+       file = stringr::str_glue("figures/{proj}_beta_div_PCoA_BrayCurtis_topN{topn}_granules_fam.pdf"), 
+       width = 14, 
+       height = 6)
+   
+```  
 
 

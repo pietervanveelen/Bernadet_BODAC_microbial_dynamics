@@ -661,8 +661,8 @@ bind_rows(bray_long, jaccard_long) %>%
   filter(sample_type_a == "granule", # select only within sample-type comparisons
          sample_type_b == "granule", # select only within sample-type comparisons
          filter_type_a == filter_type_b, # select only within filter-type comparisons
-         sampling_time_a == "before_backwash", # select only within backwashing-subgroup comparisons
-         sampling_time_b == "before_backwash",
+         sampling_time_a == "after_backwash", # select only within backwashing-subgroup comparisons
+         sampling_time_b == "after_backwash",
          year_a == year_b # compare only samples within a year
          ) 
 

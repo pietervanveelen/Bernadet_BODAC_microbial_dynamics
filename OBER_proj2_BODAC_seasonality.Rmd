@@ -46,6 +46,7 @@ if (!requireNamespace("ensembleTax", quietly = TRUE)){install.packages("ensemble
 ```{r library loading, message=F, echo=T, eval=T, warning=T, include=F, cache=F}
 
 ## load required packages
+library(Hmisc)
 library(phyloseq)
 library(qiime2R)
 library(tidyverse)
@@ -97,8 +98,55 @@ physeq = qza_to_phyloseq(
   taxonomy = "input_data/OBER_16S_515F926R_Q14878_SAM1-52_taxonomy_NB_classifier_SILVA_132_99_16S_515F-926R_QIIME2-2019.10.qza",
     metadata = "input_data/OBER_16S_515F926R_Q14878_SAM1-52@metadata_completed_OBER_formatted.txt")
 
+write_rds(physeq, "output_data/physeq.rds")
+
+# import physicochemical data
+omp_data = 
+  read.table("raw_data/OBER_16S_515F926R_Q14878_SAM1-52@metadata_omp.csv",
+                      header = T, sep = ";") %>% 
+  mutate(sampling_date = ymd(sampling_date)) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  mutate(sample_source = factor(sample_source, 
+                                levels = c("UF_permeate", "BODAC_1_effluent", "BODAC_2_effluent")),
+         timing = factor(timing, levels = c("before_backwash", "after_backwash"))) %>% 
+  select(-sd) %>% 
+  # pivot_wider(names_from = "analysis", values_from = "mean", values_fill = NA_real_) %>% head
+  # filter(timing == "before_backwash") %>% 
+  drop_na(mean) 
+
+bulk_data = 
+  read.table("raw_data/OBER_16S_515F926R_Q14878_SAM1-52@metadata_bulk.csv",
+                      header = T, sep = ";") %>% 
+  mutate(sampling_date = ymd(sampling_date)) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  select(-sd) %>% 
+  pivot_wider(names_from = "analysis", values_from = "mean")
+```
+### Explore metadata
+
+```{r ompdata}
+
+omp_data %>% 
+  ggplot(aes(x=sampling_date, color = analysis)) +
+  #geom_point(aes(y=mean)) +
+  geom_line(aes(y=mean)) +
+  #facet_wrap(~sample_source) +
+  facet_grid(rows = vars(timing), cols = vars(sample_source)) +
+  scale_colour_manual(values = c(
+    brewer.pal(12, "Paired"),
+    brewer.pal(8, "Set2"),
+    brewer.pal(8, "Dark2")
+  )) +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "3 months") +
+  scale_y_continuous(trans = "log1p") +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(y = "Concentration (unit, log-scale)",
+       x = "Time (date)")
 
 ```
+
+
 
 ### Cleaning data set
 The following quality control steps are subsequently performed to clean the data: 1) tree resolving using ape package; 2) cleaning up the metadata; 3) replacing taxonomic strings that are empty, NA, metagenome, ambiguous taxa; 4) split blanks from samples; 
@@ -177,6 +225,8 @@ rep_seqs = rep_seqs$data
 # subset the representative sequences for ASVs without Phylum assignment
 no_phylum_ASVs_rep_seqs = rep_seqs[no_phylum_ASVs]
 
+# write fasta for no_phylum_ASVs
+writeXStringSet(no_phylum_ASVs_rep_seqs, 'output_data/OBER_proj2_no_phylum_ASVs_rep_seqs.fasta')
 
 ### Taxonomy assignments using various reference databases
 # Download from http://www2.decipher.codes/Downloads.html
@@ -264,6 +314,9 @@ taxa = bind_rows(as_tibble(taxa_RDP, rownames = "OTU") %>%
 taxa = taxa %>% select(db, OTU, everything())
 taxa_resolved = taxa %>% arrange(OTU) %>% filter(!is.na(Phylum))
 taxa_resolved = taxa_resolved %>% mutate(Kingdom = if_else(is.na(Kingdom), "Eukaryota", Kingdom))
+
+# write table for new tax_info
+taxa_resolved %>% write_csv(., file = "output_data/OBER_proj2_NewTax_euk.csv")
 
 ```
 
@@ -492,6 +545,7 @@ ggsave(prow, filename = "figures/plot_alpha_div_OBER_rare13092.pdf", width = 11,
 prow
 
 ```
+
 ```{r loss of alpha diversity, message=F, echo=T, eval=T, warning=T, include=T, cache=F, fig.width=4, fig.height=2}
 
 # calculate loss of alpha diversity as a result of backwashing
@@ -569,6 +623,9 @@ ggsave(prow_loss, filename = "figures/plot_alpha_loss_in_granules_backwashing_OB
 prow_loss
 
 ```
+
+
+
 
 ### ADD Alpha div on Genus level
 
@@ -944,3 +1001,252 @@ ggsave(plot = beta_figs_fam,
 ```  
 
 
+### Core community stability
+```{r calculate core communities, eval=T, echo=F, fig.height=3, fig.width=5, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+# following https://microbiome.github.io/tutorials/Core.html
+
+## input data
+pseq <- psdata_OBER_rare
+# Calculate compositional version of the data
+# (relative abundances)
+pseq.rel <- microbiome::transform(pseq, "compositional")
+
+# define core communities per type of sample
+pseq_granules = pseq.rel %>% 
+  subset_samples(., sample_type == "granule") %>% 
+  prune_taxa(taxa_sums(.)>0,.)
+
+pseq_water = 
+  pseq.rel %>% 
+  subset_samples(., sample_type == "backwash") %>% 
+  prune_taxa(taxa_sums(.)>0,.)
+
+# core microbiome = >90% prevalent taxa
+pseq.core_granules <- core(pseq_granules, detection = 0, prevalence = .90)
+pseq.core_water <- core(pseq_water, detection = 0, prevalence = .90)
+
+core90_granules_abund = pseq.core_granules %>% psmelt()
+core90_water_abund = pseq.core_water %>% psmelt()
+
+# granules: # ~23-57% abundance
+stats_core.abundance_granules <- summary(sample_sums(pseq.core_granules)) 
+# water: # ~10-45% abundance
+stats_core.abundance_water <- summary(sample_sums(pseq.core_water))
+
+
+```
+
+```{r core stability granules, eval=T, echo=F, fig.height=3, fig.width=5, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+# tax info
+tax.df <- as.data.frame(tax_table(psdata_OBER_rare))
+tax.df$OTU <- rownames(tax.df)
+
+# granule tax info
+core.taxa_granules <- taxa(pseq.core_granules)
+core.taxa.class_granules <- 
+  dplyr::filter(tax.df, rownames(tax.df) %in% core.taxa_granules) %>% 
+  inner_join(., core90_granules_abund %>% select(OTU, Sample, Abundance), by = "OTU") %>%   select(Sample, OTU, everything()) %>% 
+  mutate(counts = Abundance*13092)
+  
+# ASV table core community granules
+ASV_table_core90_granules = 
+core.taxa.class_granules %>% 
+  select(Sample, OTU, counts) %>% 
+  pivot_wider(names_from = "OTU", values_from = "counts", values_fill = 0) %>% 
+  data.frame(row.names = 1) %>% as.matrix() %>% round()
+
+# beta diversity
+
+# avgdist Bray curtis dist matrix to use:
+bray_core90_granules = vegdist(ASV_table_core90_granules, method = "bray")
+
+# reshape to long format
+bray_core90_granules_long = 
+bray_core90_granules %>% 
+  as.matrix() %>% 
+  as_tibble(rownames = "sample_a") %>% 
+  pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
+  mutate(metric = "braycurtis")
+
+
+# define consecutive sampling moments
+consecutive_months = c("Mar_to_Jun", "Jun_to_Sep", "Sep_to_Dec", "Dec_to_Mar")
+consecutive_monthsYears = c(
+                        "Sep_2019_to_Dec_2019",
+                        "Dec_2019_to_Mar_2020",
+                        "Mar_2020_to_Jun_2020",
+                        "Jun_2020_to_Sep_2020",
+                        "Sep_2020_to_Dec_2020",
+                        "Dec_2020_to_Mar_2021",
+                        "Mar_2021_to_Jun_2021",
+                        "Jun_2021_to_Sep_2021")
+
+# reshape distance data and combine with metadata
+all_dists_core90_granules =
+bray_core90_granules_long %>% 
+  filter(sample_a != sample_b) %>% # remove self-comparisons
+  inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_a" = "sampleID")) %>% 
+  mutate(month_year = paste0(month,"_", year)) %>% 
+  rename_with(., .fn = ~paste0(.,"_a"), .cols = names(.)[-c(1:4)]) %>% # tag metadata to first sample
+  inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_b" = "sampleID")) %>%
+  mutate(month_year = paste0(month,"_", year)) %>% 
+  rename_with(., .fn = ~paste0(.,"_b"), .cols = names(.)[c(14:ncol(.))]) %>% # tag metadata to second sample
+  mutate(consec_months = paste0(month_a,"_to_", month_b)) %>% 
+  mutate(consec_monthsY_a = paste0(month_year_a,"_to_", month_year_b)) %>%
+  filter(consec_months %in% consecutive_months) %>% # select only distances between consecutive samplings
+  mutate(consec_months_year_a = factor(paste0(consec_months,"_in_", year_a), 
+                                       levels = c("Sep_to_Dec_in_2019",
+                                                  "Dec_to_Mar_in_2019",
+                                                  "Mar_to_Jun_in_2020",
+                                                  "Jun_to_Sep_in_2020",
+                                                  "Sep_to_Dec_in_2020",
+                                                  "Dec_to_Mar_in_2020",
+                                                  "Mar_to_Jun_in_2021",
+                                                  "Jun_to_Sep_in_2021"))) %>% 
+  filter(consec_monthsY_a %in% consecutive_monthsYears) %>% 
+  mutate(consec_monthsY_a = factor(consec_monthsY_a, 
+                                       levels = consecutive_monthsYears)) %>% 
+  filter(sample_type_a == "granule", # select only within sample-type comparisons
+         sample_type_b == "granule", # select only within sample-type comparisons
+         filter_type_a == filter_type_b, # select only within filter-type comparisons
+         sampling_time_a == "after_backwash", # select only within backwashing-subgroup comparisons
+         sampling_time_b == "after_backwash"
+         #year_a == year_b # compare only samples within a year
+         ) %>% 
+  mutate(stability = 1-distance)
+
+plot_stability_core90_granules = 
+all_dists_core90_granules %>% 
+  ggplot(aes(x = consec_monthsY_a, y = stability, color = year_a)) +
+    geom_col(aes(fill=year_a), show.legend = F) +
+    geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
+    scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_fill_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_shape_manual(values = c(19,17, 2)) +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5)) +
+    theme(legend.text = element_markdown(),
+          legend.key.size = unit(7, "pt"),
+          axis.ticks.x = element_blank(), 
+          strip.background = element_blank(),
+          strip.placement = "outside",
+          legend.position = "right",
+          panel.border = element_rect(colour = "black", fill = NA)) +
+    facet_wrap(~ metric + filter_type_a, ncol = 1) +
+    labs(y = "Stability \n(1 = identical community compositions)",
+         x = NULL) +
+  coord_flip()
+
+ggsave(plot_stability_core90_granules, 
+       filename = "figures/Stability_core90_granules.pdf", width = 5, height = 5)
+
+```
+
+
+```{r core stability water, eval=T, echo=F, fig.height=3, fig.width=5, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+# tax info
+tax.df <- as.data.frame(tax_table(psdata_OBER_rare))
+tax.df$OTU <- rownames(tax.df)
+
+# granule tax info
+core.taxa_water <- taxa(pseq.core_water)
+core.taxa.class_water <- 
+  dplyr::filter(tax.df, rownames(tax.df) %in% core.taxa_water) %>% 
+  inner_join(., core90_water_abund %>% select(OTU, Sample, Abundance), by = "OTU") %>%   select(Sample, OTU, everything()) %>% 
+  mutate(counts = Abundance*13092)
+  
+# ASV table core community water
+ASV_table_core90_water = 
+core.taxa.class_water %>% 
+  select(Sample, OTU, counts) %>% 
+  pivot_wider(names_from = "OTU", values_from = "counts", values_fill = 0) %>% 
+  data.frame(row.names = 1) %>% as.matrix() %>% round()
+
+# beta diversity
+
+# avgdist Bray curtis dist matrix to use:
+bray_core90_water = vegdist(ASV_table_core90_water, method = "bray")
+
+# reshape to long format
+bray_core90_water_long = 
+bray_core90_water %>% 
+  as.matrix() %>% 
+  as_tibble(rownames = "sample_a") %>% 
+  pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
+  mutate(metric = "braycurtis")
+
+
+# define consecutive sampling moments
+consecutive_months = c("Mar_to_Jun", "Jun_to_Sep", "Sep_to_Dec", "Dec_to_Mar")
+consecutive_monthsYears = c(
+                        "Sep_2019_to_Dec_2019",
+                        "Dec_2019_to_Mar_2020",
+                        "Mar_2020_to_Jun_2020",
+                        "Jun_2020_to_Sep_2020",
+                        "Sep_2020_to_Dec_2020",
+                        "Dec_2020_to_Mar_2021",
+                        "Mar_2021_to_Jun_2021",
+                        "Jun_2021_to_Sep_2021")
+
+# reshape distance data and combine with metadata
+all_dists_core90_water =
+bray_core90_water_long %>% 
+  filter(sample_a != sample_b) %>% # remove self-comparisons
+  inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_a" = "sampleID")) %>% 
+  mutate(month_year = paste0(month,"_", year)) %>% 
+  rename_with(., .fn = ~paste0(.,"_a"), .cols = names(.)[-c(1:4)]) %>% # tag metadata to first sample
+  inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_b" = "sampleID")) %>%
+  mutate(month_year = paste0(month,"_", year)) %>% 
+  rename_with(., .fn = ~paste0(.,"_b"), .cols = names(.)[c(14:ncol(.))]) %>% # tag metadata to second sample
+  mutate(consec_months = paste0(month_a,"_to_", month_b)) %>% 
+  mutate(consec_monthsY_a = paste0(month_year_a,"_to_", month_year_b)) %>%
+  filter(consec_months %in% consecutive_months) %>% # select only distances between consecutive samplings
+  mutate(consec_months_year_a = factor(paste0(consec_months,"_in_", year_a), 
+                                       levels = c("Sep_to_Dec_in_2019",
+                                                  "Dec_to_Mar_in_2019",
+                                                  "Mar_to_Jun_in_2020",
+                                                  "Jun_to_Sep_in_2020",
+                                                  "Sep_to_Dec_in_2020",
+                                                  "Dec_to_Mar_in_2020",
+                                                  "Mar_to_Jun_in_2021",
+                                                  "Jun_to_Sep_in_2021"))) %>% 
+  filter(consec_monthsY_a %in% consecutive_monthsYears) %>% 
+  mutate(consec_monthsY_a = factor(consec_monthsY_a, 
+                                       levels = consecutive_monthsYears)) %>% 
+  filter(sample_type_a == "backwash", # select only within sample-type comparisons
+         sample_type_b == "backwash", # select only within sample-type comparisons
+         filter_type_a == filter_type_b, # select only within filter-type comparisons
+         sampling_time_a == "after", # select only within backwashing-subgroup comparisons
+         sampling_time_b == "after"
+         #year_a == year_b # compare only samples within a year
+         ) %>% 
+  mutate(stability = 1-distance)
+
+plot_stability_core90_water = 
+all_dists_core90_water %>% 
+  ggplot(aes(x = consec_monthsY_a, y = stability, color = year_a)) +
+    geom_col(aes(fill=year_a), show.legend = F) +
+    geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
+    scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_fill_manual(values = c(brewer.pal(6, "Dark2"))) +
+    scale_shape_manual(values = c(19,17, 2)) +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 0, hjust = 0.5)) +
+    theme(legend.text = element_markdown(),
+          legend.key.size = unit(7, "pt"),
+          axis.ticks.x = element_blank(), 
+          strip.background = element_blank(),
+          strip.placement = "outside",
+          legend.position = "right",
+          panel.border = element_rect(colour = "black", fill = NA)) +
+    facet_wrap(~ metric + filter_type_a, ncol = 1) +
+    labs(y = "Stability \n(1 = identical community compositions)",
+         x = NULL) +
+  coord_flip()
+
+ggsave(plot_stability_core90_water, 
+       filename = "figures/Stability_core90_water.pdf", width = 5, height = 5)
+
+```

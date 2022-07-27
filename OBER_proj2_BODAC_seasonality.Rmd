@@ -479,7 +479,7 @@ alpha %>%
 # summary statistics of number of samples per group
 alpha %>% 
   group_by(filter_type, sampling_time, sample_type) %>% 
-  summarize(n=n())
+  count
   
 # reformat dates
 alpha2 = alpha %>% mutate(date = lubridate::ymd(sampling_date), 
@@ -491,38 +491,40 @@ alpha2 = alpha %>% mutate(date = lubridate::ymd(sampling_date),
 
 # plot alpha diversity
 Chao1 <- alpha2 %>% 
-ggplot(aes(x=month, y=Chao1, color = year, fill = year, shape = sampling_time)) +
+ggplot(aes(x=date, y=Chao1)) +
   #stat_summary(fun = median, geom = "bar", alpha = 0.5, position = position_dodge2(0.7, preserve = "single"), width=0.9) +
-  geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
-  scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
-  scale_fill_manual(values = c(brewer.pal(6, "Dark2"))) +
+  geom_point(aes(color = year, fill = year, shape = sampling_time), size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
+  geom_line(aes(linetype = sampling_time, color = year)) +
+  scale_color_manual(values = c(brewer.pal(6, "Blues")[3:6])) +
+  scale_fill_manual(values = c(brewer.pal(6, "Blues")[3:6])) +
   scale_shape_manual(values = c(19,17, 2)) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1)) +
   theme(legend.text = element_markdown(),
         legend.key.size = unit(7, "pt"),
         axis.ticks.x = element_blank(), 
         strip.background = element_blank(),
         strip.placement = "outside",
-        legend.position = "right",
+        legend.position = "bottom",
         panel.border = element_rect(colour = "black", fill = NA)) +
   facet_wrap(~ filter_type + sample_type)
 
-Shannon <- alpha2 %>% 
-ggplot(aes(x=month, y=Shannon, color = year, fill = year, shape = sampling_time)) +
+Shannon <- alpha2 %>%
+ggplot(aes(x=date, y=Shannon)) +
   #stat_summary(fun = median, geom = "bar", alpha = 0.5, position = position_dodge2(0.7, preserve = "single"), width=0.9) +
-  geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
-  scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
-  scale_fill_manual(values = c(brewer.pal(6, "Dark2"))) +
+  geom_point(aes(color = year, fill = year, shape = sampling_time), size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
+  geom_line(aes(linetype = sampling_time, color = year)) +
+  scale_color_manual(values = c(brewer.pal(6, "Blues")[3:6])) +
+  scale_fill_manual(values = c(brewer.pal(6, "Blues")[3:6])) +
   scale_shape_manual(values = c(19,17, 2)) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1)) +
   theme(legend.text = element_markdown(),
         legend.key.size = unit(7, "pt"),
         axis.ticks.x = element_blank(), 
         strip.background = element_blank(),
         strip.placement = "outside",
-        legend.position = "right",
+        legend.position = "bottom",
         panel.border = element_rect(colour = "black", fill = NA)) +
   facet_wrap(~ filter_type + sample_type)
 
@@ -535,8 +537,8 @@ prow = plot_grid(
                    hjust = -1, 
                    ncol = 2),
   get_legend(Chao1), 
-  ncol = 2 , 
-  rel_widths = c(6, 1))
+  nrow = 2 , 
+  rel_heights = c(5, 1))
 
 # save plot
 ggsave(prow, filename = "figures/plot_alpha_div_OBER_rare13092.pdf", width = 11, height = 6)
@@ -633,46 +635,89 @@ prow_loss
 
 ### Beta div using avgrare
 
-```{r calculate avg beta diversity ASV, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+```{r calculate avg beta diversity ASV granules, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
 
 ### Beta diversity analysis first
 # input data  = psdata_OBER
-psdata_OBER_beta <-
+psdata_OBER_beta_granules <-
   psdata_OBER %>% 
   subset_samples(sample_type == "granule") %>% 
   prune_taxa(taxa_sums(.)>0, .)
 
 # create subset frequency matrix
-OBER_matrix <- as.matrix(t(otu_table(psdata_OBER_beta)))
+OBER_matrix_granules <- as.matrix(t(otu_table(psdata_OBER_beta_granules)))
 
 # determine minimal sampling depth
-min_sample <- min(sample_sums(psdata_OBER_beta))
+min_sample_granules <- min(sample_sums(psdata_OBER_beta_granules))
 
 # rarefaction taking mean of 100 iterations
 set.seed(711)
-OBER_rare13092 <- avgdist(OBER_matrix, d_method="bray", sample = min_sample, iterations = 100)
-OBER_rare13092_jac <- avgdist(OBER_matrix, d_method="jaccard", sample = min_sample, iterations = 100)
+OBER_rare13092_granules <- avgdist(OBER_matrix_granules, d_method="bray", sample = min_sample_granules, iterations = 100)
+OBER_rare13092_jac_granules <- avgdist(OBER_matrix_granules, d_method="jaccard", sample = min_sample_granules, iterations = 100)
 
 source("scripts/avgrarefy.r")
-OBER_rare13092_table = avgrarefy(x=OBER_matrix, sample = min_sample, iterations = 100, seed = 711)
+OBER_rare13092_table_granules = avgrarefy(x=OBER_matrix_granules, sample = min_sample_granules, iterations = 100, seed = 711)
 
 ```
 
+```{r calculate avg beta diversity ASV backwash water, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+### Beta diversity analysis first
+# input data  = psdata_OBER
+psdata_OBER_beta_backwash <-
+  psdata_OBER %>% 
+  subset_samples(sample_type == "backwash") %>% 
+  prune_taxa(taxa_sums(.)>0, .)
+
+# create subset frequency matrix
+OBER_matrix_backwash <- as.matrix(t(otu_table(psdata_OBER_beta_backwash)))
+
+# determine minimal sampling depth
+min_sample_backwash <- min(sample_sums(psdata_OBER_beta_backwash))
+
+# rarefaction taking mean of 100 iterations
+set.seed(711)
+OBER_rare21227_backwash <- avgdist(OBER_matrix_backwash, d_method="bray", sample = min_sample_backwash, iterations = 100)
+OBER_rare21227_jac_backwash <- avgdist(OBER_matrix_backwash, d_method="jaccard", sample = min_sample_backwash, iterations = 100)
+
+source("scripts/avgrarefy.r")
+OBER_rare21227_table_backwash = avgrarefy(x=OBER_matrix_backwash, sample = min_sample_backwash, iterations = 100, seed = 711)
+
+```
+
+
 ```{r beta diversity without ordination}
 
+# can be split
 # avgdist Bray curtis dist matrix to use:
-class(OBER_rare13092)
+psdata_OBER_beta_all <-
+  psdata_OBER
+
+# create subset frequency matrix
+OBER_matrix_all <- as.matrix(t(otu_table(psdata_OBER_beta_all)))
+
+# determine minimal sampling depth
+min_sample_all <- min(sample_sums(psdata_OBER_beta_all))
+
+# rarefaction taking mean of 100 iterations
+set.seed(711)
+OBER_rare13092_all <- avgdist(OBER_matrix_all, d_method="bray", sample = min_sample_all, iterations = 100)
+OBER_rare13092_jac_all <- avgdist(OBER_matrix_all, d_method="jaccard", sample = min_sample_all, iterations = 100)
+
+source("scripts/avgrarefy.r")
+OBER_rare13092_table_all = avgrarefy(x=OBER_matrix_all, sample = min_sample_all, iterations = 100, seed = 711)
+
 
 # reshape to long format
-bray_long = 
-OBER_rare13092 %>% 
+bray_long_all = 
+OBER_rare13092_all %>% 
   as.matrix() %>% 
   as_tibble(rownames = "sample_a") %>% 
   pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
   mutate(metric = "braycurtis")
 
-jaccard_long =
-OBER_rare13092_jac %>% 
+jaccard_long_all =
+OBER_rare13092_jac_all %>% 
   as.matrix() %>% 
   as_tibble(rownames = "sample_a") %>% 
   pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
@@ -691,8 +736,8 @@ consecutive_monthsYears = c("Sep_2019_to_Dec_2019",
                         "Jun_2021_to_Sep_2021")
 
 # reshape distance data and combine with metadata
-all_dists =
-bind_rows(bray_long, jaccard_long) %>% 
+all_dists_all =
+bind_rows(bray_long_all, jaccard_long_all) %>% 
   filter(sample_a != sample_b) %>% # remove self-comparisons
   inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_a" = "sampleID")) %>% 
   mutate(month_year = paste0(month,"_", year)) %>% 
@@ -723,7 +768,7 @@ bind_rows(bray_long, jaccard_long) %>%
          year_a == year_b # compare only samples within a year
          ) 
 
-all_dists %>% 
+all_dists_all %>% 
   ggplot(aes(x = consec_monthsY_a, y = distance, color = year_a)) +
     geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
     scale_color_manual(values = c(brewer.pal(6, "Dark2"))) +
@@ -742,6 +787,7 @@ all_dists %>%
     labs(y = "Distance",
          x = NULL)
 
+# TODO: plot for backwashwater if wanted
 
 
 ```
@@ -771,7 +817,9 @@ OBER_rare13092_table_fam = avgrarefy(x=OBER_matrix_fam, sample = min_sample, ite
 ```
 
 
-```{r plot avg beta diversity ASV, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+```{r plot avg beta diversity ASV granules, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+## Objects are not named as granules only!
 # PCoA on rarefied data
 pcoa <- cmdscale(OBER_rare13092, k = 2, eig = T, add = T)
 positions <- pcoa$points
@@ -885,7 +933,89 @@ ggsave(plot = beta_figs,
    
 ```  
 
-```{r plot avg beta diversity Family, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+```{r plot avg beta diversity ASV timepath granules, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+library(ggrepel)
+
+# PCoA on rarefied data
+pcoa_granules <- cmdscale(OBER_rare13092_granules, k = 2, eig = T, add = T)
+positions_granules <- pcoa_granules$points
+colnames(positions_granules) <- c("pcoa1", "pcoa2")
+
+plot_beta_tbl_granules <- positions_granules %>%  
+  as_tibble(rownames = "samples") %>% 
+  inner_join(., metadata_cleaned, by = c("samples"="sampleid")) 
+
+p = 
+  plot_beta_tbl_granules %>% 
+  mutate(sampling_date = ymd(sampling_date),
+         sampling_time = factor(sampling_time, levels = c("before_backwash", "after_backwash")),
+         month = month.abb[month],
+         month_year = paste0(month, " ", year)) %>% 
+  ggplot(aes(x=pcoa1, y=pcoa2)) +
+  geom_vline(xintercept = 0, linetype = 3, color = "grey80") +
+  geom_hline(yintercept = 0, linetype = 3, color = "grey80") +
+  geom_point(aes(color=sampling_date), size =3) +
+  geom_path(aes(color = sampling_date), size = 1.5) +
+  scale_color_gradient(low = "lightblue", high = "dodgerblue", guide = "none") +
+  scale_y_continuous(expand = c(-0.3, 0.4)) +
+  facet_grid(cols=vars(filter_type), rows = vars(sampling_time)) +
+  theme_classic()
+  
+p = p +  geom_text_repel(aes(label = month_year, color = sampling_date))
+
+print(p)
+
+# save plot
+ggsave(plot = p, 
+       file = stringr::str_glue("figures/{proj}_beta_div_PCoA_BrayCurtis_granules_timepath.pdf"), 
+       width = 6, 
+       height = 8)
+
+```
+
+```{r plot avg beta diversity ASV timepath backwash, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+library(ggrepel)
+
+# PCoA on rarefied data
+pcoa_backwash <- cmdscale(OBER_rare13092_backwash, k = 2, eig = T, add = T)
+positions_backwash <- pcoa_backwash$points
+colnames(positions_backwash) <- c("pcoa1", "pcoa2")
+
+plot_beta_tbl_backwash <- positions_backwash %>%  
+  as_tibble(rownames = "samples") %>% 
+  inner_join(., metadata_cleaned, by = c("samples"="sampleid")) 
+
+q = 
+  plot_beta_tbl_backwash %>% 
+  mutate(sampling_date = ymd(sampling_date),
+         sampling_time = factor(sampling_time, levels = c("before_backwash", "after_backwash")),
+         month = month.abb[month],
+         month_year = paste0(month, " ", year)) %>% 
+  ggplot(aes(x=pcoa1, y=pcoa2)) +
+  geom_vline(xintercept = 0, linetype = 3, color = "grey80") +
+  geom_hline(yintercept = 0, linetype = 3, color = "grey80") +
+  geom_point(aes(color=sampling_date), size =3) +
+  geom_path(aes(color = sampling_date), size = 1.5) +
+  scale_color_gradient(low = "lightblue", high = "dodgerblue", guide = "none") +
+  scale_y_continuous(expand = c(-0.3, 0.4)) +
+  facet_grid(cols=vars(filter_type)) +
+  theme_classic()
+  
+q = q +  geom_text_repel(aes(label = month_year, color = sampling_date))
+
+print(q)
+
+# save plot
+ggsave(plot = q, 
+       file = stringr::str_glue("figures/{proj}_beta_div_PCoA_BrayCurtis_backwash_timepath.pdf"), 
+       width = 6, 
+       height = 8)
+
+```
+
+```{r plot avg beta diversity Family, eval=F, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=F}
 
 # PCoA on rarefied data
 pcoa_fam <- cmdscale(OBER_rare13092_fam, k = 2, eig = T, add = T)
@@ -994,14 +1124,14 @@ beta_figs_fam
 
 # save plot
 ggsave(plot = beta_figs_fam, 
-       file = stringr::str_glue("figures/{proj}_beta_div_PCoA_BrayCurtis_topN{topn}_granules_fam.pdf"), 
+       file = stringr::str_glue("figures/{proj}_beta_div_PCoA_BrayCurtis_topN{topn}_backwash_fam.pdf"), 
        width = 14, 
        height = 6)
    
 ```  
 
 
-### Core community stability
+### Core community stability based on Bray-Curtis dissimilarities (1-x)
 ```{r calculate core communities, eval=T, echo=F, fig.height=3, fig.width=5, message=FALSE, warning=FALSE, cache=FALSE, include=T}
 
 # following https://microbiome.github.io/tutorials/Core.html
@@ -1143,7 +1273,6 @@ ggsave(plot_stability_core90_granules,
 
 ```
 
-
 ```{r core stability water, eval=T, echo=F, fig.height=3, fig.width=5, message=FALSE, warning=FALSE, cache=FALSE, include=T}
 
 # tax info
@@ -1248,5 +1377,132 @@ all_dists_core90_water %>%
 
 ggsave(plot_stability_core90_water, 
        filename = "figures/Stability_core90_water.pdf", width = 5, height = 5)
+
+```
+
+
+### Top ASVs relative abundances over time (rarefied)
+
+```{r plot top ASVs granules, eval=T, echo=F, fig.height=3, fig.width=5, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+OBER_rare13092_table_granules_long_ASV = 
+OBER_rare13092_table_granules %>% 
+  as_tibble(rownames = "sampleID") %>% 
+  rowwise() %>% mutate(sample_sums = sum(c_across(2:ncol(.)))) %>% 
+  mutate_at(vars(-sampleID, -sample_sums), funs(. / sample_sums)) %>%
+  inner_join(., alpha2, by = "sampleID") %>% 
+  select(sample_sums, colnames(alpha2), everything()) %>% 
+  pivot_longer(cols = c(`9d86d845ef6790bf04ed6d8fffde4ab2`:ncol(.)), 
+               names_to = "ASV", 
+               values_to = "rel_abund")
+
+
+top10_ASVs_granules = 
+OBER_rare13092_table_granules_long_ASV %>% 
+  #select(sampleID, ASV, rel_abund) %>%
+  inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
+  summarise(rel_abund = sum(rel_abund)) %>% 
+  ungroup() %>% 
+  group_by(sampleID) %>% 
+  arrange(-rel_abund, .by_group = T) %>% 
+  slice_head(n=10) %>% 
+  pull(tax_label) %>% unique()
+
+# plot script
+top_asv_rel_abund_granules <-
+OBER_rare13092_table_granules_long_ASV %>% 
+  #select(sampleID, ASV, rel_abund) %>%
+  inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
+  summarise(rel_abund = sum(rel_abund)) %>% 
+  filter(tax_label %in% top10_ASVs_granules,
+         rel_abund > 0.0099) %>% 
+  ggplot(aes(x=date, y=tax_label)) +
+  geom_point(aes(size = rel_abund, alpha = rel_abund, color = rel_abund)) +
+  scale_size_continuous(breaks = c(0.01, 0.05, 0.1, 0.2, 0.3),
+                        labels = c("1%","5%","10%", "20%", "30%")) +
+  scale_color_gradient(low = "dodgerblue", high = "darkblue") +
+  facet_grid(cols = vars(filter_type, sampling_time)) +
+  #theme_classic() #+
+  theme(axis.text.y = element_text(size = 8),
+        legend.position = "bottom",
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank())
+
+
+print(top_asv_rel_abund_granules)
+
+# save plot
+ggsave(plot = top_asv_rel_abund_granules, 
+       file = stringr::str_glue("figures/{proj}_ASV_top10_rel_abund_granules.pdf"), 
+       width = 20, 
+       height = 10)
+
+```
+
+```{r plot top ASVs backwash, eval=T, echo=F, fig.height=3, fig.width=5, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+OBER_rare21227_table_backwash_long_ASV = 
+OBER_rare21227_table_backwash %>% 
+  as_tibble(rownames = "sampleID") %>% 
+  rowwise() %>% mutate(sample_sums = sum(c_across(2:ncol(.)))) %>% 
+  mutate_at(vars(-sampleID, -sample_sums), funs(. / sample_sums)) %>%
+  inner_join(., alpha2, by = "sampleID") %>% 
+  select(sample_sums, colnames(alpha2), everything()) %>% 
+  pivot_longer(cols = c(`32d66dbc09b2f1d42b219a2814d313c4`:ncol(.)), 
+               names_to = "ASV", 
+               values_to = "rel_abund")
+
+
+top10_ASVs_backwash = 
+OBER_rare21227_table_backwash_long_ASV %>% 
+  #select(sampleID, ASV, rel_abund) %>%
+  inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
+  summarise(rel_abund = sum(rel_abund)) %>% 
+  ungroup() %>% 
+  group_by(sampleID) %>% 
+  arrange(-rel_abund, .by_group = T) %>% 
+  slice_head(n=10) %>% 
+  pull(tax_label) %>% unique()
+
+# plot script
+top_asv_rel_abund_backwash <-
+OBER_rare21227_table_backwash_long_ASV %>% 
+  #select(sampleID, ASV, rel_abund) %>%
+  inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
+  summarise(rel_abund = sum(rel_abund)) %>% 
+  filter(tax_label %in% top10_ASVs_backwash,
+         rel_abund > 0.0099) %>% 
+  ggplot(aes(x=date, y=tax_label)) +
+  geom_point(aes(size = rel_abund, alpha = rel_abund, color = rel_abund)) +
+  scale_size_continuous(breaks = c(0.01, 0.05, 0.1, 0.2, 0.3),
+                        labels = c("1%","5%","10%", "20%", "30%")) +
+  scale_color_gradient(low = "dodgerblue", high = "darkblue") +
+  facet_grid(cols = vars(filter_type, sampling_time)) +
+  #theme_classic() #+
+  theme(axis.text.y = element_text(size = 8),
+        legend.position = "bottom",
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank())
+
+
+print(top_asv_rel_abund_backwash)
+
+# save plot
+ggsave(plot = top_asv_rel_abund_backwash, 
+       file = stringr::str_glue("figures/{proj}_ASV_top10_rel_abund_backwash.pdf"), 
+       width = 12, 
+       height = 8)
 
 ```

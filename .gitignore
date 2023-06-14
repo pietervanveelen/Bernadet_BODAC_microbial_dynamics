@@ -49,17 +49,17 @@ figures/*tiff
 figures/*png
 
 # redundant figures
-formatted_figures/
-Stability_core*
-*rare13092.pdf
-*rare23345.pdf
-*_curves.pdf
-*_timepath.pdf
-*_grey.pdf
-*_backwash.pdf
-*_granules_fam.pdf
-*topN15_granules.pdf
-*topN25_granules.pdf
+figures/formatted_figures/
+figures/Stability_core*
+figures/*rare13092.pdf
+figures/*rare23345.pdf
+figures/*_curves.pdf
+figures/*_timepath.pdf
+figures/*_grey.pdf
+figures/*_backwash.pdf
+figures/*_granules_fam.pdf
+figures/*topN15_granules.pdf
+figures/*topN25_granules.pdf
 
 # redundant data
 *_removal.Rmd

@@ -4,6 +4,7 @@
 
 # Session Data files
 .RData
+.RDataTmp
 
 # User-specific files
 .Ruserdata
@@ -62,6 +63,7 @@ figures/*topN15_granules.pdf
 figures/*topN25_granules.pdf
 
 # redundant data
+raw_data/
 *_removal.Rmd
 *.rds
 input_data/RDS_files/

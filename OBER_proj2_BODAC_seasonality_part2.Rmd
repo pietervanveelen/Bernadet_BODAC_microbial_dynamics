@@ -1,9 +1,10 @@
 ---
-title: "OBER_proj2_BODAC_seasonality"
+title: "OBER_Proj2_BODAC_seasonality_part2"
 author: "Pieter van Veelen"
-date: "5/12/2022"
+date: "8/2/2022"
 output: html_document
 ---
+
 
 ### Background
 
@@ -100,7 +101,52 @@ physeq = qza_to_phyloseq(
 
 write_rds(physeq, "output_data/physeq.rds")
 
+# import physicochemical data
+omp_data = 
+  read.table("raw_data/OBER_16S_515F926R_Q14878_SAM1-52@metadata_omp.csv",
+                      header = T, sep = ";") %>% 
+  mutate(sampling_date = ymd(sampling_date)) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  mutate(sample_source = factor(sample_source, 
+                                levels = c("UF_permeate", "BODAC_1_effluent", "BODAC_2_effluent")),
+         timing = factor(timing, levels = c("before_backwash", "after_backwash"))) %>% 
+  select(-sd) %>% 
+  # pivot_wider(names_from = "analysis", values_from = "mean", values_fill = NA_real_) %>% head
+  # filter(timing == "before_backwash") %>% 
+  drop_na(mean) 
+
+bulk_data = 
+  read.table("raw_data/OBER_16S_515F926R_Q14878_SAM1-52@metadata_bulk.csv",
+                      header = T, sep = ";") %>% 
+  mutate(sampling_date = ymd(sampling_date)) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  select(-sd) %>% 
+  pivot_wider(names_from = "analysis", values_from = "mean")
 ```
+### Explore metadata
+
+```{r ompdata}
+
+omp_data %>% 
+  ggplot(aes(x=sampling_date, color = analysis)) +
+  #geom_point(aes(y=mean)) +
+  geom_line(aes(y=mean)) +
+  #facet_wrap(~sample_source) +
+  facet_grid(rows = vars(timing), cols = vars(sample_source)) +
+  scale_colour_manual(values = c(
+    brewer.pal(12, "Paired"),
+    brewer.pal(8, "Set2"),
+    brewer.pal(8, "Dark2")
+  )) +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "3 months") +
+  scale_y_continuous(trans = "log1p") +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90, hjust = 1)) +
+  labs(y = "Concentration (unit, log-scale)",
+       x = "Time (date)")
+
+```
+
 
 
 ### Cleaning data set
@@ -137,7 +183,7 @@ metadata_cleaned =
   sample_data(psdata_OBER) %>% 
     as.data.frame() %>% 
     as_tibble() %>% 
-    dplyr::mutate(across(wet_weight:purified_quantus, ~parse_number(., locale = locale(decimal_mark = ",")))) %>% 
+    mutate(across(wet_weight:purified_quantus, ~parse_number(., locale = locale(decimal_mark = ",")))) %>% 
     as.data.frame()
 metadata_cleaned$sampleid = metadata_cleaned$description
 metadata_cleaned = metadata_cleaned %>% select(sampleid, everything())
@@ -171,7 +217,7 @@ no_phylum_ASVs =
   pull(OTU) %>% 
   unique()
 
-View(tax_table(prune_taxa(taxa_names(psdata_OBER) %in% no_phylum_ASVs, psdata_OBER)))
+#View(tax_table(prune_taxa(taxa_names(psdata_OBER) %in% no_phylum_ASVs, psdata_OBER)))
 
 # read ASV feature representative sequences as a DNAStringSet
 rep_seqs = qiime2R::read_qza("input_data/OBER_16S_515F926R_Q14878_SAM1-52_representative_sequences.qza")
@@ -260,15 +306,15 @@ colnames(taxa_SILVA) <- c(rank_names(psdata_OBER))
 colnames(taxa_PR2) <- c(rank_names(psdata_OBER))
 as_tibble(taxa_RDP, rownames = "OTU")
 taxa = bind_rows(as_tibble(taxa_RDP, rownames = "OTU") %>% 
-                   dplyr::mutate(db = rep(str_extract("ids_RDP", pattern = "[^_]+$"), nrow(taxa_RDP))),
+                   mutate(db = rep(str_extract("ids_RDP", pattern = "[^_]+$"), nrow(taxa_RDP))),
                  as_tibble(taxa_SILVA, rownames = "OTU") %>% 
-                   dplyr::mutate(db = rep(str_extract("ids_SILVA", pattern = "[^_]+$"), nrow(taxa_SILVA))),
+                   mutate(db = rep(str_extract("ids_SILVA", pattern = "[^_]+$"), nrow(taxa_SILVA))),
                  as_tibble(taxa_PR2, rownames = "OTU") %>% 
-                   dplyr::mutate(db = rep(str_extract("ids_PR2", pattern = "[^_]+$"), nrow(taxa_PR2)))
+                   mutate(db = rep(str_extract("ids_PR2", pattern = "[^_]+$"), nrow(taxa_PR2)))
                  )
 taxa = taxa %>% select(db, OTU, everything())
 taxa_resolved = taxa %>% arrange(OTU) %>% filter(!is.na(Phylum))
-taxa_resolved = taxa_resolved %>% dplyr::mutate(Kingdom = if_else(is.na(Kingdom), "Eukaryota", Kingdom))
+taxa_resolved = taxa_resolved %>% mutate(Kingdom = if_else(is.na(Kingdom), "Eukaryota", Kingdom))
 
 # write table for new tax_info
 taxa_resolved %>% write_csv(., file = "output_data/OBER_proj2_NewTax_euk.csv")
@@ -413,7 +459,7 @@ otu_table(psdata_OBER_rare) <- otu_rare
 alpha <- estimate_richness(psdata_OBER_rare, measures = c("Observed", "Chao1", "Shannon"))
 alpha$sampleid <- row.names(alpha)
 metadata = metadata %>% 
-  dplyr::mutate(sampleid = sampleID) %>% 
+  mutate(sampleid = sampleID) %>% 
   filter(sampleid %in% sample_names(psdata_OBER_rare))
 alpha <- inner_join(metadata, alpha, by = "sampleid")
 alpha$combined = factor(paste0(
@@ -423,7 +469,7 @@ alpha$combined = factor(paste0(
 
 alpha = 
 alpha %>% 
-  dplyr::mutate(combined = factor(combined, 
+  mutate(combined = factor(combined, 
                            levels= c("BODAC_1-granule-before_backwash",
                                   "BODAC_1-granule-after_backwash",
                                   "BODAC_1-backwash-NA",
@@ -437,7 +483,7 @@ alpha %>%
   count
   
 # reformat dates
-alpha2 = alpha %>% dplyr::mutate(date = lubridate::ymd(sampling_date), 
+alpha2 = alpha %>% mutate(date = lubridate::ymd(sampling_date), 
                          sampling_time = if_else(is.na(sampling_time), "after", sampling_time), 
                          month = as.numeric(as.character(month)),
                          month = lubridate::month(month, label = T),
@@ -514,7 +560,7 @@ alpha2 %>%
   select(Chao1, Shannon, filter_type, sampling_time, month, year) %>% 
   pivot_longer(c(Chao1, Shannon), names_to = "alpha_metric", values_to = "value") %>% 
   pivot_wider(names_from = "sampling_time", values_from = "value") %>% 
-  dplyr::mutate(loss = before_backwash - after_backwash) %>% 
+  mutate(loss = before_backwash - after_backwash) %>% 
   filter(alpha_metric == "Chao1") %>% 
   ggplot(aes(x = month, y = loss, color = year, fill = year)) +
     geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
@@ -541,7 +587,7 @@ alpha2 %>%
   select(Chao1, Shannon, filter_type, sampling_time, month, year) %>% 
   pivot_longer(c(Chao1, Shannon), names_to = "alpha_metric", values_to = "value") %>% 
   pivot_wider(names_from = "sampling_time", values_from = "value") %>% 
-  dplyr::mutate(loss = before_backwash - after_backwash) %>% 
+  mutate(loss = before_backwash - after_backwash) %>% 
   filter(alpha_metric == "Shannon") %>% 
   ggplot(aes(x = month, y = loss, color = year, fill = year)) +
     geom_point(size = 2, show.legend = T) + # position = position_jitterdodge(0.2)) +
@@ -601,9 +647,6 @@ psdata_OBER_beta_granules <-
   subset_samples(sample_type == "granule") %>% 
   prune_taxa(taxa_sums(.)>0, .)
 
-# save granule microbiome data for MP removal analysis
-saveRDS(psdata_OBER_beta_granules, "output_data/psdata_OBER_beta_granules.rds")
-
 # create subset frequency matrix
 OBER_matrix_granules <- as.matrix(t(otu_table(psdata_OBER_beta_granules)))
 
@@ -617,19 +660,45 @@ OBER_rare13092_jac_granules <- avgdist(OBER_matrix_granules, d_method="jaccard",
 
 source("scripts/avgrarefy.r")
 OBER_rare13092_table_granules = avgrarefy(x=OBER_matrix_granules, sample = min_sample_granules, iterations = 100, seed = 711)
-# save rarefied table
-saveRDS(OBER_rare13092_table_granules, "output_data/OBER_rare13092_table_granules.rds")
+
+
 
 ```
 
-```{r adonis beta diversity ASV granules, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+```{r calculate avg beta diversity ASV granules and backwash, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+
+# reshape the time variable from dates to days (januari days from 2019 onwards)
+sample_data(psdata_OBER_beta_granules)$date = lubridate::ymd(sample_data(psdata_OBER_beta_granules)$sampling_date)
+sample_data(psdata_OBER_beta_backwash)$date = lubridate::ymd(sample_data(psdata_OBER_beta_backwash)$sampling_date)
+
+sample_data(psdata_OBER_beta_granules)$days = lubridate::yday(sample_data(psdata_OBER_beta_granules)$date)
+sample_data(psdata_OBER_beta_backwash)$days = lubridate::yday(sample_data(psdata_OBER_beta_backwash)$date)
+
+sample_data(psdata_OBER_beta_granules)$days = if_else(sample_data(psdata_OBER_beta_granules)$year == 2019, sample_data(psdata_OBER_beta_granules)$days, if_else(sample_data(psdata_OBER_beta_granules)$year == 2020, sample_data(psdata_OBER_beta_granules)$days + 365, sample_data(psdata_OBER_beta_granules)$days + 365 + 366))
+
+sample_data(psdata_OBER_beta_backwash)$days = if_else(sample_data(psdata_OBER_beta_backwash)$year == 2019, sample_data(psdata_OBER_beta_backwash)$days, if_else(sample_data(psdata_OBER_beta_backwash)$year == 2020, sample_data(psdata_OBER_beta_backwash)$days + 365, sample_data(psdata_OBER_beta_backwash)$days + 365 + 366))
 
 # sample data
 sam_data_granules <- data.frame(sample_data(psdata_OBER_beta_granules))
+sam_data_backwash <- data.frame(sample_data(psdata_OBER_beta_backwash))
 
 # calculate adonis permanova on granules only on ASV level Bray-Curtis diss
 
-adonis_bc_granules = adonis2(OBER_rare13092_granules ~ filter_type * sampling_date + sampling_time, permutations = 999, data = sam_data_granules, by = )
+# granules adonis
+adonis_bc_granules = adonis2(OBER_rare13092_granules ~ filter_type + days + sampling_time, permutations = 999, data = sam_data_granules) # R crashes by using the by = 'margin' argument
+
+
+adonis_bc_granules %>% broom::tidy() %>% kableExtra::kbl(caption = "Granules: Bray-Curtis dissimilarity") %>% kableExtra::kable_minimal() %>% 
+kableExtra::save_kable("output_data/Table_Adonis_granules_BC_rare13092.jpg", bs_theme = "simplex", self_contained = TRUE)
+
+
+# backwash water adonis
+psdata_OBER_beta_backwash
+
+adonis_bc_backwash = vegan::adonis2(OBER_rare21227_backwash ~ filter_type + days, permutations = 999, data = sam_data_backwash) # R crashes by using the by = 'margin' argument
+
+adonis_bc_backwash %>% broom::tidy() %>% kableExtra::kbl(caption = "Backwash water: Bray-Curtis dissimilarity") %>% kableExtra::kable_minimal() %>% 
+kableExtra::save_kable("output_data/Table_Adonis_backwash_BC_rare21227.jpg", bs_theme = "simplex", self_contained = TRUE,)
 
 ```
 
@@ -688,14 +757,14 @@ OBER_rare13092_all %>%
   as.matrix() %>% 
   as_tibble(rownames = "sample_a") %>% 
   pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
-  dplyr::mutate(metric = "braycurtis")
+  mutate(metric = "braycurtis")
 
 jaccard_long_all =
 OBER_rare13092_jac_all %>% 
   as.matrix() %>% 
   as_tibble(rownames = "sample_a") %>% 
   pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
-  dplyr::mutate(metric = "jaccard")
+  mutate(metric = "jaccard")
 
 
 # define consecutive sampling moments
@@ -714,15 +783,15 @@ all_dists_all =
 bind_rows(bray_long_all, jaccard_long_all) %>% 
   filter(sample_a != sample_b) %>% # remove self-comparisons
   inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_a" = "sampleID")) %>% 
-  dplyr::mutate(month_year = paste0(month,"_", year)) %>% 
+  mutate(month_year = paste0(month,"_", year)) %>% 
   rename_with(., .fn = ~paste0(.,"_a"), .cols = names(.)[-c(1:4)]) %>% # tag metadata to first sample
   inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_b" = "sampleID")) %>%
-  dplyr::mutate(month_year = paste0(month,"_", year)) %>% 
+  mutate(month_year = paste0(month,"_", year)) %>% 
   rename_with(., .fn = ~paste0(.,"_b"), .cols = names(.)[c(14:ncol(.))]) %>% # tag metadata to second sample
-  dplyr::mutate(consec_months = paste0(month_a,"_to_", month_b)) %>% 
-  dplyr::mutate(consec_monthsY_a = paste0(month_year_a,"_to_", month_year_b)) %>%
+  mutate(consec_months = paste0(month_a,"_to_", month_b)) %>% 
+  mutate(consec_monthsY_a = paste0(month_year_a,"_to_", month_year_b)) %>%
   filter(consec_months %in% consecutive_months) %>% # select only distances between consecutive samplings
-  dplyr::mutate(consec_months_year_a = factor(paste0(consec_months,"_in_", year_a), 
+  mutate(consec_months_year_a = factor(paste0(consec_months,"_in_", year_a), 
                                        levels = c("Sep_to_Dec_in_2019",
                                                   "Dec_to_Mar_in_2019",
                                                   "Mar_to_Jun_in_2020",
@@ -732,7 +801,7 @@ bind_rows(bray_long_all, jaccard_long_all) %>%
                                                   "Mar_to_Jun_in_2021",
                                                   "Jun_to_Sep_in_2021"))) %>% 
   filter(consec_monthsY_a %in% consecutive_monthsYears) %>% 
-  dplyr::mutate(consec_monthsY_a = factor(consec_monthsY_a, 
+  mutate(consec_monthsY_a = factor(consec_monthsY_a, 
                                        levels = consecutive_monthsYears)) %>% 
   filter(sample_type_a == "granule", # select only within sample-type comparisons
          sample_type_b == "granule", # select only within sample-type comparisons
@@ -791,7 +860,8 @@ OBER_rare13092_table_fam = avgrarefy(x=OBER_matrix_fam, sample = min_sample, ite
 ```
 
 
-```{r plot avg beta diversity ASV granules, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
+```{r plot avg beta diversity ASV granules, eval=F, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=F}
+
 
 ## Objects are not named as granules only!
 # PCoA on rarefied data
@@ -831,9 +901,9 @@ ASV_info_abund <- ps_abund_top_info(psdata_OBER_beta, top_nr = topn)
 
 # filteer species scores for top 10 taxa
 spe.scores_top = spe.scores %>% filter(taxon %in% ASV_info_abund$taxon) %>% 
-  dplyr::mutate(Genus = if_else(is.na(Genus), paste0("Genus of ", Family), Genus)) %>% 
+  mutate(Genus = if_else(is.na(Genus), paste0("Genus of ", Family), Genus)) %>% 
   inner_join(., ASV_info_abund %>% select(taxon, abund), by = "taxon") %>% 
-  dplyr::mutate(abund_sqrt_1000r = sqrt(abund/1000))
+  mutate(abund_sqrt_1000r = sqrt(abund/1000))
 
 # plot samples and top25 species scores
 plot_beta_tbl <- positions %>%  
@@ -920,7 +990,7 @@ colnames(positions_granules) <- c("pcoa1", "pcoa2")
 plot_beta_tbl_granules <- positions_granules %>%  
   as_tibble(rownames = "samples") %>% 
   inner_join(., metadata_cleaned, by = c("samples"="sampleid")) %>% 
-  dplyr::mutate(combi = factor(paste0(filter_type, "_", sampling_time), levels = c("BODAC_1_before_backwash", "BODAC_1_after_backwash",  "BODAC_2_before_backwash", "BODAC_2_after_backwash"))) 
+  mutate(combi = factor(paste0(filter_type, "_", sampling_time), levels = c("BODAC_1_before_backwash", "BODAC_1_after_backwash",  "BODAC_2_before_backwash", "BODAC_2_after_backwash"))) 
 
 # percent explained by axes
 percent_explained_granules <- 100* pcoa_granules$eig / sum(pcoa_granules$eig)
@@ -934,7 +1004,7 @@ labs <- c(glue("PCoA 1 ({pretty_pe_granules[1]}%)"),
 
 p = 
   plot_beta_tbl_granules %>% 
-  dplyr::mutate(sampling_date = ymd(sampling_date),
+  mutate(sampling_date = ymd(sampling_date),
          sampling_time = factor(sampling_time, levels = c("before_backwash", "after_backwash")),
          month = month.abb[month],
          month_year = paste0(month, " ", year)) %>% 
@@ -986,7 +1056,7 @@ labs <- c(glue("PCoA 1 ({pretty_pe_backwash[1]}%)"),
 
 q = 
   plot_beta_tbl_backwash %>% 
-  dplyr::mutate(sampling_date = ymd(sampling_date),
+  mutate(sampling_date = ymd(sampling_date),
          sampling_time = factor(sampling_time, levels = c("before_backwash", "after_backwash")),
          month = month.abb[month],
          month_year = paste0(month, " ", year)) %>% 
@@ -1052,9 +1122,9 @@ ASV_info_abund_fam <- ps_abund_top_info(psdata_OBER_beta_fam, top_nr = topn)
 
 # filteer species scores for top 10 taxa
 spe.scores_top_fam = spe.scores_fam %>% filter(taxon %in% ASV_info_abund_fam$taxon) %>% 
-  dplyr::mutate(Genus = if_else(is.na(Genus), paste0("Genus of ", Family), Genus)) %>% 
+  mutate(Genus = if_else(is.na(Genus), paste0("Genus of ", Family), Genus)) %>% 
   inner_join(., ASV_info_abund_fam %>% select(taxon, abund), by = "taxon") %>% 
-  dplyr::mutate(abund_sqrt_1000r = sqrt(abund/1000))
+  mutate(abund_sqrt_1000r = sqrt(abund/1000))
 
 # plot samples and top25 species scores
 plot_beta_tbl_fam <- positions_fam %>%  
@@ -1175,7 +1245,7 @@ core.taxa_granules <- taxa(pseq.core_granules)
 core.taxa.class_granules <- 
   dplyr::filter(tax.df, rownames(tax.df) %in% core.taxa_granules) %>% 
   inner_join(., core90_granules_abund %>% select(OTU, Sample, Abundance), by = "OTU") %>%   select(Sample, OTU, everything()) %>% 
-  dplyr::mutate(counts = Abundance*13092)
+  mutate(counts = Abundance*13092)
   
 # ASV table core community granules
 ASV_table_core90_granules = 
@@ -1195,7 +1265,7 @@ bray_core90_granules %>%
   as.matrix() %>% 
   as_tibble(rownames = "sample_a") %>% 
   pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
-  dplyr::mutate(metric = "braycurtis")
+  mutate(metric = "braycurtis")
 
 
 # define consecutive sampling moments
@@ -1215,15 +1285,15 @@ all_dists_core90_granules =
 bray_core90_granules_long %>% 
   filter(sample_a != sample_b) %>% # remove self-comparisons
   inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_a" = "sampleID")) %>% 
-  dplyr::mutate(month_year = paste0(month,"_", year)) %>% 
+  mutate(month_year = paste0(month,"_", year)) %>% 
   rename_with(., .fn = ~paste0(.,"_a"), .cols = names(.)[-c(1:4)]) %>% # tag metadata to first sample
   inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_b" = "sampleID")) %>%
-  dplyr::mutate(month_year = paste0(month,"_", year)) %>% 
+  mutate(month_year = paste0(month,"_", year)) %>% 
   rename_with(., .fn = ~paste0(.,"_b"), .cols = names(.)[c(14:ncol(.))]) %>% # tag metadata to second sample
-  dplyr::mutate(consec_months = paste0(month_a,"_to_", month_b)) %>% 
-  dplyr::mutate(consec_monthsY_a = paste0(month_year_a,"_to_", month_year_b)) %>%
+  mutate(consec_months = paste0(month_a,"_to_", month_b)) %>% 
+  mutate(consec_monthsY_a = paste0(month_year_a,"_to_", month_year_b)) %>%
   filter(consec_months %in% consecutive_months) %>% # select only distances between consecutive samplings
-  dplyr::mutate(consec_months_year_a = factor(paste0(consec_months,"_in_", year_a), 
+  mutate(consec_months_year_a = factor(paste0(consec_months,"_in_", year_a), 
                                        levels = c("Sep_to_Dec_in_2019",
                                                   "Dec_to_Mar_in_2019",
                                                   "Mar_to_Jun_in_2020",
@@ -1233,7 +1303,7 @@ bray_core90_granules_long %>%
                                                   "Mar_to_Jun_in_2021",
                                                   "Jun_to_Sep_in_2021"))) %>% 
   filter(consec_monthsY_a %in% consecutive_monthsYears) %>% 
-  dplyr::mutate(consec_monthsY_a = factor(consec_monthsY_a, 
+  mutate(consec_monthsY_a = factor(consec_monthsY_a, 
                                        levels = consecutive_monthsYears)) %>% 
   filter(sample_type_a == "granule", # select only within sample-type comparisons
          sample_type_b == "granule", # select only within sample-type comparisons
@@ -1242,7 +1312,7 @@ bray_core90_granules_long %>%
          sampling_time_b == "after_backwash"
          #year_a == year_b # compare only samples within a year
          ) %>% 
-  dplyr::mutate(stability = 1-distance)
+  mutate(stability = 1-distance)
 
 plot_stability_core90_granules = 
 all_dists_core90_granules %>% 
@@ -1282,7 +1352,7 @@ core.taxa_water <- taxa(pseq.core_water)
 core.taxa.class_water <- 
   dplyr::filter(tax.df, rownames(tax.df) %in% core.taxa_water) %>% 
   inner_join(., core90_water_abund %>% select(OTU, Sample, Abundance), by = "OTU") %>%   select(Sample, OTU, everything()) %>% 
-  dplyr::mutate(counts = Abundance*13092)
+  mutate(counts = Abundance*13092)
   
 # ASV table core community water
 ASV_table_core90_water = 
@@ -1302,7 +1372,7 @@ bray_core90_water %>%
   as.matrix() %>% 
   as_tibble(rownames = "sample_a") %>% 
   pivot_longer(-sample_a, names_to = "sample_b", values_to = "distance") %>% 
-  dplyr::mutate(metric = "braycurtis")
+  mutate(metric = "braycurtis")
 
 
 # define consecutive sampling moments
@@ -1322,15 +1392,15 @@ all_dists_core90_water =
 bray_core90_water_long %>% 
   filter(sample_a != sample_b) %>% # remove self-comparisons
   inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_a" = "sampleID")) %>% 
-  dplyr::mutate(month_year = paste0(month,"_", year)) %>% 
+  mutate(month_year = paste0(month,"_", year)) %>% 
   rename_with(., .fn = ~paste0(.,"_a"), .cols = names(.)[-c(1:4)]) %>% # tag metadata to first sample
   inner_join(., alpha2 %>% select(sampleID,sampling_date:sampling_time), by = c("sample_b" = "sampleID")) %>%
-  dplyr::mutate(month_year = paste0(month,"_", year)) %>% 
+  mutate(month_year = paste0(month,"_", year)) %>% 
   rename_with(., .fn = ~paste0(.,"_b"), .cols = names(.)[c(14:ncol(.))]) %>% # tag metadata to second sample
-  dplyr::mutate(consec_months = paste0(month_a,"_to_", month_b)) %>% 
-  dplyr::mutate(consec_monthsY_a = paste0(month_year_a,"_to_", month_year_b)) %>%
+  mutate(consec_months = paste0(month_a,"_to_", month_b)) %>% 
+  mutate(consec_monthsY_a = paste0(month_year_a,"_to_", month_year_b)) %>%
   filter(consec_months %in% consecutive_months) %>% # select only distances between consecutive samplings
-  dplyr::mutate(consec_months_year_a = factor(paste0(consec_months,"_in_", year_a), 
+  mutate(consec_months_year_a = factor(paste0(consec_months,"_in_", year_a), 
                                        levels = c("Sep_to_Dec_in_2019",
                                                   "Dec_to_Mar_in_2019",
                                                   "Mar_to_Jun_in_2020",
@@ -1340,7 +1410,7 @@ bray_core90_water_long %>%
                                                   "Mar_to_Jun_in_2021",
                                                   "Jun_to_Sep_in_2021"))) %>% 
   filter(consec_monthsY_a %in% consecutive_monthsYears) %>% 
-  dplyr::mutate(consec_monthsY_a = factor(consec_monthsY_a, 
+  mutate(consec_monthsY_a = factor(consec_monthsY_a, 
                                        levels = consecutive_monthsYears)) %>% 
   filter(sample_type_a == "backwash", # select only within sample-type comparisons
          sample_type_b == "backwash", # select only within sample-type comparisons
@@ -1349,7 +1419,7 @@ bray_core90_water_long %>%
          sampling_time_b == "after"
          #year_a == year_b # compare only samples within a year
          ) %>% 
-  dplyr::mutate(stability = 1-distance)
+  mutate(stability = 1-distance)
 
 plot_stability_core90_water = 
 all_dists_core90_water %>% 
@@ -1386,7 +1456,7 @@ ggsave(plot_stability_core90_water,
 OBER_rare13092_table_granules_long_ASV = 
 OBER_rare13092_table_granules %>% 
   as_tibble(rownames = "sampleID") %>% 
-  rowwise() %>% dplyr::mutate(sample_sums = sum(c_across(2:ncol(.)))) %>% 
+  rowwise() %>% mutate(sample_sums = sum(c_across(2:ncol(.)))) %>% 
   mutate_at(vars(-sampleID, -sample_sums), funs(. / sample_sums)) %>%
   inner_join(., alpha2, by = "sampleID") %>% 
   select(sample_sums, colnames(alpha2), everything()) %>% 
@@ -1399,7 +1469,7 @@ top10_ASVs_granules =
 OBER_rare13092_table_granules_long_ASV %>% 
   #select(sampleID, ASV, rel_abund) %>%
   inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
-  dplyr::mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
   group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
   summarise(rel_abund = sum(rel_abund)) %>% 
   ungroup() %>% 
@@ -1412,7 +1482,7 @@ OBER_rare13092_table_granules_long_ASV %>%
 OBER_rare13092_table_granules_long_ASV %>% 
   #select(sampleID, ASV, rel_abund) %>%
   inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
-  dplyr::mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
   group_by(tax_label, date, filter_type, sampling_time, sampleID, Phylum, Class, Order, Family, Genus) %>% 
   summarise(rel_abund = sum(rel_abund)) %>% 
   filter(tax_label %in% top10_ASVs_granules,
@@ -1425,24 +1495,24 @@ OBER_rare13092_table_granules_long_ASV %>%
 # read functional group classifications
 top10_ASVs_granules_classes = read.table("output_data/top10_ASVs_granules_classified.csv", header = T, sep = ";") %>% 
   as_tibble() %>% 
-  dplyr::mutate(functional_group = factor(functional_group, levels = c("AOA", "AOB", "put_AOB", "NOB_Commamox", "MnOB", "put_MnOB", "others")))
+  mutate(functional_group = factor(functional_group, levels = c("AOA", "AOB", "put_AOB", "NOB_Commamox", "MnOB", "put_MnOB", "others")))
 
 # plot script
 top_asv_rel_abund_granules <-
 OBER_rare13092_table_granules_long_ASV %>% 
   #select(sampleID, ASV, rel_abund) %>%
   inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
-  dplyr::mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
   group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
   summarise(rel_abund = sum(rel_abund)) %>% 
   filter(tax_label %in% top10_ASVs_granules,
          rel_abund > 0.0099) %>% 
   inner_join(., top10_ASVs_granules_classes %>% select(tax_label, tax_name, functional_group), by = "tax_label") %>% 
-  dplyr::mutate(sampling_time = factor(sampling_time, levels = c("before_backwash","after_backwash"))) %>% 
+  mutate(sampling_time = factor(sampling_time, levels = c("before_backwash","after_backwash"))) %>% 
   ggplot(aes(x=date, y=tax_name)) +
   scale_size_continuous(breaks = c(0.01, 0.05, 0.1, 0.2, 0.3),
                         labels = c("1%","5%","10%", "20%", "30%")) +
-  scale_color_gradient(low = "dodgerblue", high = "darkblue") +
+  scale_color_gradient(low = "grey60", high = "grey10") +
   facet_grid(cols = vars(filter_type, sampling_time), rows = vars(functional_group), scales = "free_y", space = "free_y") +
   geom_point(aes(size = rel_abund, alpha = rel_abund, color = rel_abund)) +
   theme_classic() +
@@ -1459,18 +1529,36 @@ top_asv_rel_abund_granules
 
 # save plot
 ggsave(plot = top_asv_rel_abund_granules, 
-       file = stringr::str_glue("figures/{proj}_ASV_top10_rel_abund_granules.pdf"), 
+       file = stringr::str_glue("figures/{proj}_ASV_top10_rel_abund_granules_grey.pdf"), 
        width = 10, 
        height = 7)
 
+# save underlying data
+OBER_rare13092_table_granules_long_ASV %>% 
+  #select(sampleID, ASV, rel_abund) %>%
+  inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
+  summarise(rel_abund = sum(rel_abund)) %>% 
+  filter(tax_label %in% top10_ASVs_granules,
+         rel_abund > 0.0099) %>% 
+  inner_join(., top10_ASVs_granules_classes %>% select(tax_label, tax_name, functional_group), by = "tax_label") %>% 
+  mutate(sampling_time = factor(sampling_time, levels = c("before_backwash","after_backwash"))) %>% 
+  ungroup() %>% 
+  dplyr::select(sampleID, tax_label, rel_abund) %>% 
+  pivot_wider(names_from = sampleID, values_from = rel_abund, values_fill = 0) %>% 
+  write_csv(., glue::glue("output_data/{proj}_Bubbleplot_data.csv"))
+
+
 ```
 
+### TODO: repeat / redo granule bubble plot with classifications also for backwash water
 ```{r plot top ASVs backwash, eval=T, echo=F, fig.height=3, fig.width=5, message=FALSE, warning=FALSE, cache=FALSE, include=T}
 
 OBER_rare21227_table_backwash_long_ASV = 
 OBER_rare21227_table_backwash %>% 
   as_tibble(rownames = "sampleID") %>% 
-  rowwise() %>% dplyr::mutate(sample_sums = sum(c_across(2:ncol(.)))) %>% 
+  rowwise() %>% mutate(sample_sums = sum(c_across(2:ncol(.)))) %>% 
   mutate_at(vars(-sampleID, -sample_sums), funs(. / sample_sums)) %>%
   inner_join(., alpha2, by = "sampleID") %>% 
   select(sample_sums, colnames(alpha2), everything()) %>% 
@@ -1479,23 +1567,11 @@ OBER_rare21227_table_backwash %>%
                values_to = "rel_abund")
 
 
-
-psmelt_test = 
-  psdata_OBER_beta_backwash %>% psmelt() %>% 
-  select(OTU, Abundance, month) %>% 
-  group_by(month) %>% 
-  arrange(-Abundance, .by_group = T) %>% 
-  slice_head(n = 10) %>% 
-  ungroup() %>% pull(OTU) %>% unique 
-
-psdata_OBER_beta_backwash %>% subset_taxa(., taxa_names(psdata_OBER_beta_backwash) %in% psmelt_test)
-
-
 top10_ASVs_backwash = 
 OBER_rare21227_table_backwash_long_ASV %>% 
   #select(sampleID, ASV, rel_abund) %>%
   inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
-  dplyr::mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
   group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
   summarise(rel_abund = sum(rel_abund)) %>% 
   ungroup() %>% 
@@ -1509,7 +1585,7 @@ top_asv_rel_abund_backwash <-
 OBER_rare21227_table_backwash_long_ASV %>% 
   #select(sampleID, ASV, rel_abund) %>%
   inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
-  dplyr::mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
   group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
   summarise(rel_abund = sum(rel_abund)) %>% 
   filter(tax_label %in% top10_ASVs_backwash,

@@ -1,0 +1,217 @@
+"";"tax_label";"date";"filter_type";"sampling_time";"sampleID";"rel_abund"
+"1";"Alphaproteobacteria__Paracaedibacterales__Paracaedibacteraceae__Candidatus Paracaedibacter";2021-03-25;"BODAC_1";"after";"OBER.018";0,0351744596694448
+"2";"Alphaproteobacteria__Reyranellales__Reyranellaceae__Reyranella";2020-03-04;"BODAC_2";"after";"OBER.042";0,0130457307022088
+"3";"Alphaproteobacteria__Reyranellales__Reyranellaceae__Reyranella";2020-06-25;"BODAC_2";"after";"OBER.036";0,0150666227223504
+"4";"Alphaproteobacteria__Reyranellales__Reyranellaceae__Reyranella";2020-09-15;"BODAC_2";"after";"OBER.030";0,0194119864304561
+"5";"Alphaproteobacteria__Reyranellales__Reyranellaceae__Reyranella";2020-12-14;"BODAC_2";"after";"OBER.024";0,0500070631445119
+"6";"Alphaproteobacteria__Reyranellales__Reyranellaceae__Reyranella";2021-06-16;"BODAC_1";"after";"OBER.012";0,0205495593156431
+"7";"Alphaproteobacteria__Reyranellales__Reyranellaceae__Reyranella";2021-06-16;"BODAC_2";"after";"OBER.013";0,0967635402906209
+"8";"Alphaproteobacteria__Reyranellales__Reyranellaceae__Reyranella";2021-09-08;"BODAC_1";"after";"OBER.006";0,0123485883960975
+"9";"Alphaproteobacteria__Reyranellales__Reyranellaceae__Reyranella";2021-09-08;"BODAC_2";"after";"OBER.007";0,0823002592505303
+"10";"Alphaproteobacteria__Rhizobiales__Hyphomicrobiaceae__Hyphomicrobium";2020-12-14;"BODAC_1";"after";"OBER.023";0,0100800753650495
+"11";"Alphaproteobacteria__Rhizobiales__Hyphomicrobiaceae__Hyphomicrobium";2021-03-25;"BODAC_1";"after";"OBER.018";0,0164806705278523
+"12";"Alphaproteobacteria__Rhizobiales__Hyphomicrobiaceae__Hyphomicrobium";2021-06-16;"BODAC_1";"after";"OBER.012";0,0146109252014894
+"13";"Alphaproteobacteria__Rhizobiales__Hyphomicrobiaceae__Hyphomicrobium";2021-06-16;"BODAC_2";"after";"OBER.013";0,0117474995282129
+"14";"Alphaproteobacteria__Rhizobiales__Hyphomicrobiaceae__Hyphomicrobium";2021-09-08;"BODAC_1";"after";"OBER.006";0,0186171466277042
+"15";"Alphaproteobacteria__Rhizobiales__Xanthobacteraceae__Bradyrhizobium";2020-12-14;"BODAC_1";"after";"OBER.023";0,0186999528968441
+"16";"Alphaproteobacteria__Rhizobiales__Xanthobacteraceae__Pseudorhodoplanes";2020-12-14;"BODAC_2";"after";"OBER.024";0,0201064180439798
+"17";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__NA";2020-03-04;"BODAC_1";"after";"OBER.041";0,0099844581547591
+"18";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__NA";2020-09-15;"BODAC_1";"after";"OBER.029";0,0126307851823923
+"19";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__NA";2020-12-14;"BODAC_2";"after";"OBER.024";0,031030748222442
+"20";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__NA";2021-03-25;"BODAC_1";"after";"OBER.018";0,0247680934218581
+"21";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__NA";2021-06-16;"BODAC_1";"after";"OBER.012";0,0166847339397653
+"22";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__NA";2021-06-16;"BODAC_2";"after";"OBER.013";0,0155217965653897
+"23";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__NA";2021-09-08;"BODAC_1";"after";"OBER.006";0,0261582693123439
+"24";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__NA";2021-09-08;"BODAC_2";"after";"OBER.007";0,0148479849163328
+"25";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__Novosphingobium";2021-03-25;"BODAC_1";"after";"OBER.018";0,0269812120355982
+"26";"Alphaproteobacteria__Sphingomonadales__Sphingomonadaceae__Novosphingobium";2021-09-08;"BODAC_1";"after";"OBER.006";0,0162605457887543
+"27";"Anaerolineae__Caldilineales__Caldilineaceae__uncultured";2020-03-04;"BODAC_2";"after";"OBER.042";0,0924504309329817
+"28";"Anaerolineae__Caldilineales__Caldilineaceae__uncultured";2020-06-25;"BODAC_1";"after";"OBER.035";0,0255806284449051
+"29";"Anaerolineae__Caldilineales__Caldilineaceae__uncultured";2020-06-25;"BODAC_2";"after";"OBER.036";0,216064786477706
+"30";"Anaerolineae__Caldilineales__Caldilineaceae__uncultured";2020-09-15;"BODAC_2";"after";"OBER.030";0,0417923105917829
+"31";"Anaerolineae__Caldilineales__Caldilineaceae__uncultured";2020-12-14;"BODAC_2";"after";"OBER.024";0,091067476573904
+"32";"Anaerolineae__Caldilineales__Caldilineaceae__uncultured";2021-06-16;"BODAC_2";"after";"OBER.013";0,0727023966786186
+"33";"Anaerolineae__Caldilineales__Caldilineaceae__uncultured";2021-09-08;"BODAC_2";"after";"OBER.007";0,0585434833843978
+"34";"Bacteroidia__Chitinophagales__Chitinophagaceae__Ferruginibacter";2020-03-04;"BODAC_1";"after";"OBER.041";0,0119625111854189
+"35";"Bacteroidia__Chitinophagales__Chitinophagaceae__Ferruginibacter";2020-06-25;"BODAC_1";"after";"OBER.035";0,0135676261365242
+"36";"Bacteroidia__Chitinophagales__Chitinophagaceae__Ferruginibacter";2020-12-14;"BODAC_2";"after";"OBER.024";0,0136083250929981
+"37";"Bacteroidia__Chitinophagales__Chitinophagaceae__Ferruginibacter";2021-03-25;"BODAC_1";"after";"OBER.018";0,0545274756321514
+"38";"Bacteroidia__Chitinophagales__Chitinophagaceae__Ferruginibacter";2021-06-16;"BODAC_1";"after";"OBER.012";0,0393081019936843
+"39";"Bacteroidia__Chitinophagales__Chitinophagaceae__Ferruginibacter";2021-06-16;"BODAC_2";"after";"OBER.013";0,0105208529911304
+"40";"Bacteroidia__Chitinophagales__Chitinophagaceae__Ferruginibacter";2021-09-08;"BODAC_1";"after";"OBER.006";0,0162134137719753
+"41";"Bacteroidia__Chitinophagales__Chitinophagaceae__Sediminibacterium";2020-09-15;"BODAC_1";"after";"OBER.029";0,137901781506268
+"42";"Bacteroidia__Chitinophagales__Chitinophagaceae__Sediminibacterium";2020-09-15;"BODAC_2";"after";"OBER.030";0,0218149264983038
+"43";"Bacteroidia__Chitinophagales__Chitinophagaceae__Sediminibacterium";2021-06-16;"BODAC_1";"after";"OBER.012";0,0114059480605175
+"44";"Bacteroidia__Chitinophagales__Chitinophagaceae__Sediminibacterium";2021-09-08;"BODAC_1";"after";"OBER.006";0,0212094075505491
+"45";"Bacteroidia__Chitinophagales__Chitinophagaceae__Terrimonas";2020-03-04;"BODAC_2";"after";"OBER.042";0,011397353176659
+"46";"Bacteroidia__Chitinophagales__Chitinophagaceae__Terrimonas";2020-06-25;"BODAC_1";"after";"OBER.035";0,0135205163235502
+"47";"Bacteroidia__Chitinophagales__Chitinophagaceae__Terrimonas";2020-12-14;"BODAC_2";"after";"OBER.024";0,0184583509911946
+"48";"Bacteroidia__Chitinophagales__Chitinophagaceae__Terrimonas";2021-03-25;"BODAC_1";"after";"OBER.018";0,0439327588642464
+"49";"Bacteroidia__Chitinophagales__Chitinophagaceae__Terrimonas";2021-06-16;"BODAC_1";"after";"OBER.012";0,0819154451618985
+"50";"Bacteroidia__Chitinophagales__Chitinophagaceae__Terrimonas";2021-06-16;"BODAC_2";"after";"OBER.013";0,0381204000754859
+"51";"Bacteroidia__Chitinophagales__Chitinophagaceae__Terrimonas";2021-09-08;"BODAC_1";"after";"OBER.006";0,0394966300608003
+"52";"Bacteroidia__Chitinophagales__Chitinophagaceae__Terrimonas";2021-09-08;"BODAC_2";"after";"OBER.007";0,0211171341032288
+"53";"Bacteroidia__Chitinophagales__Chitinophagaceae__uncultured";2020-09-15;"BODAC_1";"after";"OBER.029";0,0154114431143369
+"54";"Bacteroidia__Chitinophagales__Chitinophagaceae__uncultured";2020-09-15;"BODAC_2";"after";"OBER.030";0,0251130795326046
+"55";"Bacteroidia__Chitinophagales__Chitinophagaceae__uncultured";2021-03-25;"BODAC_1";"after";"OBER.018";0,0603192541319395
+"56";"Bacteroidia__Chitinophagales__Chitinophagaceae__uncultured";2021-06-16;"BODAC_1";"after";"OBER.012";0,0448696799736061
+"57";"Bacteroidia__Chitinophagales__Chitinophagaceae__uncultured";2021-09-08;"BODAC_1";"after";"OBER.006";0,0146109252014894
+"58";"Bacteroidia__Chitinophagales__Chitinophagaceae__uncultured";2021-09-08;"BODAC_2";"after";"OBER.007";0,0259721894885694
+"59";"Bacteroidia__Chitinophagales__Saprospiraceae__uncultured";2020-06-25;"BODAC_1";"after";"OBER.035";0,0155933480944081
+"60";"Bacteroidia__Chitinophagales__Saprospiraceae__uncultured";2020-09-15;"BODAC_1";"after";"OBER.029";0,0308228862286738
+"61";"Bacteroidia__Chitinophagales__Saprospiraceae__uncultured";2020-09-15;"BODAC_2";"after";"OBER.030";0,0247832642291745
+"62";"Bacteroidia__Chitinophagales__Saprospiraceae__uncultured";2020-12-14;"BODAC_2";"after";"OBER.024";0,0103592786175072
+"63";"Bacteroidia__Chitinophagales__Saprospiraceae__uncultured";2021-03-25;"BODAC_1";"after";"OBER.018";0,0316899750435561
+"64";"Bacteroidia__Chitinophagales__Saprospiraceae__uncultured";2021-06-16;"BODAC_1";"after";"OBER.012";0,070933685252392
+"65";"Bacteroidia__Chitinophagales__Saprospiraceae__uncultured";2021-09-08;"BODAC_1";"after";"OBER.006";0,0857802705377763
+"66";"Bacteroidia__Chitinophagales__Saprospiraceae__uncultured";2021-09-08;"BODAC_2";"after";"OBER.007";0,0105114305915626
+"67";"Bacteroidia__Chitinophagales__uncultured__uncultured Cytophagales bacterium";2021-03-25;"BODAC_1";"after";"OBER.018";0,0522201817582521
+"68";"Bacteroidia__Chitinophagales__uncultured__uncultured Cytophagales bacterium";2021-06-16;"BODAC_1";"after";"OBER.012";0,0200782391478531
+"69";"Bacteroidia__Flavobacteriales__Flavobacteriaceae__Flavobacterium";2020-06-25;"BODAC_1";"after";"OBER.035";0,0135676261365242
+"70";"Bacteroidia__Flavobacteriales__Flavobacteriaceae__Flavobacterium";2020-09-15;"BODAC_1";"after";"OBER.029";0,0710717315486851
+"71";"Bacteroidia__Flavobacteriales__Flavobacteriaceae__Flavobacterium";2020-09-15;"BODAC_2";"after";"OBER.030";0,0861760271390878
+"72";"Bacteroidia__Flavobacteriales__Flavobacteriaceae__Flavobacterium";2020-12-14;"BODAC_1";"after";"OBER.023";0,0258125294394724
+"73";"Bacteroidia__Flavobacteriales__Flavobacteriaceae__Flavobacterium";2020-12-14;"BODAC_2";"after";"OBER.024";0,012384046710929
+"74";"Bacteroidia__Flavobacteriales__Flavobacteriaceae__Flavobacterium";2021-03-25;"BODAC_1";"after";"OBER.018";0,146725055327965
+"75";"Bacteroidia__Flavobacteriales__Flavobacteriaceae__Flavobacterium";2021-06-16;"BODAC_1";"after";"OBER.012";0,0449168119903851
+"76";"Bacteroidia__Flavobacteriales__Flavobacteriaceae__Flavobacterium";2021-09-08;"BODAC_1";"after";"OBER.006";0,0395437620775793
+"77";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__JGI 0001001-H03";2020-03-04;"BODAC_1";"after";"OBER.041";0,0181321527810484
+"78";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__JGI 0001001-H03";2020-03-04;"BODAC_2";"after";"OBER.042";0,022182451843828
+"79";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__JGI 0001001-H03";2020-06-25;"BODAC_1";"after";"OBER.035";0,0163471051019927
+"80";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__JGI 0001001-H03";2020-06-25;"BODAC_2";"after";"OBER.036";0,0347473986534206
+"81";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__JGI 0001001-H03";2021-06-16;"BODAC_2";"after";"OBER.013";0,0127854312134365
+"82";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__NA";2020-03-04;"BODAC_1";"after";"OBER.041";0,0507229312862054
+"83";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__NA";2020-03-04;"BODAC_2";"after";"OBER.042";0,0201102058117082
+"84";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__NA";2020-06-25;"BODAC_1";"after";"OBER.035";0,0338248457153625
+"85";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__NA";2021-06-16;"BODAC_1";"after";"OBER.012";0,0103690436913796
+"86";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__Stenotrophobacter";2020-03-04;"BODAC_1";"after";"OBER.041";0,10832195167899
+"87";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__Stenotrophobacter";2020-03-04;"BODAC_2";"after";"OBER.042";0,0158244242452786
+"88";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__Stenotrophobacter";2020-06-25;"BODAC_1";"after";"OBER.035";0,0624205021906063
+"89";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__Stenotrophobacter";2020-06-25;"BODAC_2";"after";"OBER.036";0,0171382833466736
+"90";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__Stenotrophobacter";2021-03-25;"BODAC_1";"after";"OBER.018";0,0154447426661016
+"91";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__Stenotrophobacter";2021-06-16;"BODAC_1";"after";"OBER.012";0,0292689824197577
+"92";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__Stenotrophobacter";2021-06-16;"BODAC_2";"after";"OBER.013";0,0137290054727307
+"93";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__Stenotrophobacter";2021-09-08;"BODAC_1";"after";"OBER.006";0,0249328368760899
+"94";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__Stenotrophobacter";2021-09-08;"BODAC_2";"after";"OBER.007";0,0138109827951921
+"95";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__uncultured";2020-03-04;"BODAC_1";"after";"OBER.041";0,033626901521217
+"96";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__uncultured";2020-03-04;"BODAC_2";"after";"OBER.042";0,0161070032496586
+"97";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__uncultured";2020-06-25;"BODAC_1";"after";"OBER.035";0,0264286050784378
+"98";"Blastocatellia (Subgroup 4)__Blastocatellales__Blastocatellaceae__uncultured";2020-06-25;"BODAC_2";"after";"OBER.036";0,0123357973539244
+"99";"Chlamydiae__Chlamydiales__Parachlamydiaceae__Neochlamydia";2020-09-15;"BODAC_2";"after";"OBER.030";0,0138993592159819
+"100";"Chlamydiae__Chlamydiales__Parachlamydiaceae__Neochlamydia";2021-06-16;"BODAC_2";"after";"OBER.013";0,0409039441404039
+"101";"Chloroflexia__Thermomicrobiales__JG30-KF-CM45__Ambiguous_taxa";2020-03-04;"BODAC_1";"after";"OBER.041";0,022465030848208
+"102";"Chloroflexia__Thermomicrobiales__JG30-KF-CM45__Ambiguous_taxa";2020-06-25;"BODAC_1";"after";"OBER.035";0,0409384274744429
+"103";"Chloroflexia__Thermomicrobiales__JG30-KF-CM45__Ambiguous_taxa";2020-06-25;"BODAC_2";"after";"OBER.036";0,0125712133339611
+"104";"Chloroflexia__Thermomicrobiales__JG30-KF-CM45__Ambiguous_taxa";2021-06-16;"BODAC_1";"after";"OBER.012";0,0217749917518971
+"105";"Chloroflexia__Thermomicrobiales__JG30-KF-CM45__Ambiguous_taxa";2021-06-16;"BODAC_2";"after";"OBER.013";0,0154274391394603
+"106";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__Hydrogenophaga";2020-09-15;"BODAC_1";"after";"OBER.029";0,023847676501084
+"107";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__NA";2020-09-15;"BODAC_1";"after";"OBER.029";0,0388349514563107
+"108";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__NA";2020-09-15;"BODAC_2";"after";"OBER.030";0,0337353938937052
+"109";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__NA";2020-12-14;"BODAC_2";"after";"OBER.024";0,0375288411734237
+"110";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__NA";2021-03-25;"BODAC_1";"after";"OBER.018";0,0166219334180911
+"111";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__NA";2021-06-16;"BODAC_1";"after";"OBER.012";0,0125371164632135
+"112";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__NA";2021-09-08;"BODAC_1";"after";"OBER.006";0,0271009096479238
+"113";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__NA";2021-09-08;"BODAC_2";"after";"OBER.007";0,024228140466651
+"114";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__Ralstonia";2020-12-14;"BODAC_1";"after";"OBER.023";0,295148374941121
+"115";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__Variovorax";2020-09-15;"BODAC_1";"after";"OBER.029";0,0230464699783203
+"116";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__Variovorax";2020-09-15;"BODAC_2";"after";"OBER.030";0,0106954391255183
+"117";"Gammaproteobacteria__Betaproteobacteriales__Burkholderiaceae__Variovorax";2021-09-08;"BODAC_1";"after";"OBER.006";0,0188999387283782
+"118";"Gammaproteobacteria__Betaproteobacteriales__Nitrosomonadaceae__MND1";2020-09-15;"BODAC_2";"after";"OBER.030";0,0106954391255183
+"119";"Gammaproteobacteria__Betaproteobacteriales__Nitrosomonadaceae__Nitrosomonas";2020-03-04;"BODAC_1";"after";"OBER.041";0,0250082418876277
+"120";"Gammaproteobacteria__Betaproteobacteriales__Nitrosomonadaceae__Nitrosomonas";2020-09-15;"BODAC_1";"after";"OBER.029";0,0369968894334999
+"121";"Gammaproteobacteria__Betaproteobacteriales__Nitrosomonadaceae__Nitrosomonas";2020-12-14;"BODAC_1";"after";"OBER.023";0,0137070183702308
+"122";"Gammaproteobacteria__Betaproteobacteriales__Nitrosomonadaceae__Nitrosomonas";2021-03-25;"BODAC_1";"after";"OBER.018";0,082921316570137
+"123";"Gammaproteobacteria__Betaproteobacteriales__Nitrosomonadaceae__Nitrosomonas";2021-06-16;"BODAC_1";"after";"OBER.012";0,022152047886129
+"124";"Gammaproteobacteria__Betaproteobacteriales__Nitrosomonadaceae__Nitrosomonas";2021-09-08;"BODAC_1";"after";"OBER.006";0,0603289814771174
+"125";"Gammaproteobacteria__Enterobacteriales__Enterobacteriaceae__Escherichia-Shigella";2020-12-14;"BODAC_1";"after";"OBER.023";0,221761658031088
+"126";"Gammaproteobacteria__Nitrococcales__Halorhodospiraceae__Alkalilimnicola";2020-12-14;"BODAC_1";"after";"OBER.023";0,0156853509185115
+"127";"Nitrospira__Nitrospirales__Nitrospiraceae__Nitrospira";2020-03-04;"BODAC_1";"after";"OBER.041";0,022041162341638
+"128";"Nitrospira__Nitrospirales__Nitrospiraceae__Nitrospira";2020-06-25;"BODAC_1";"after";"OBER.035";0,0107410373580817
+"129";"Nitrospira__Nitrospirales__Nitrospiraceae__Nitrospira";2020-09-15;"BODAC_1";"after";"OBER.029";0,0301159392968235
+"130";"Nitrospira__Nitrospirales__Nitrospiraceae__Nitrospira";2020-12-14;"BODAC_1";"after";"OBER.023";0,0424870466321244
+"131";"Nitrospira__Nitrospirales__Nitrospiraceae__Nitrospira";2021-03-25;"BODAC_1";"after";"OBER.018";0,0402128360879597
+"132";"Nitrospira__Nitrospirales__Nitrospiraceae__Nitrospira";2021-06-16;"BODAC_1";"after";"OBER.012";0,0386011217419993
+"133";"Nitrospira__Nitrospirales__Nitrospiraceae__Nitrospira";2021-09-08;"BODAC_1";"after";"OBER.006";0,0662676155912711
+"134";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2020-03-04;"BODAC_1";"after";"OBER.041";0,022417934347478
+"135";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2020-03-04;"BODAC_2";"after";"OBER.042";0,0643809164979042
+"136";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2020-06-25;"BODAC_1";"after";"OBER.035";0,0712300372167523
+"137";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2020-06-25;"BODAC_2";"after";"OBER.036";0,0580535806770564
+"138";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2020-09-15;"BODAC_2";"after";"OBER.030";0,0125800980022616
+"139";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2020-12-14;"BODAC_2";"after";"OBER.024";0,0345623204784103
+"140";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2021-06-16;"BODAC_1";"after";"OBER.012";0,0129141725974454
+"141";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2021-06-16;"BODAC_2";"after";"OBER.013";0,0203812040007549
+"142";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2021-09-08;"BODAC_1";"after";"OBER.006";0,0181458264599142
+"143";"Planctomycetacia__Gemmatales__Gemmataceae__uncultured";2021-09-08;"BODAC_2";"after";"OBER.007";0,0286589677115249
+"144";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2020-03-04;"BODAC_1";"after";"OBER.041";0,0401733151226864
+"145";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2020-03-04;"BODAC_2";"after";"OBER.042";0,0381952620920266
+"146";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2020-06-25;"BODAC_1";"after";"OBER.035";0,0336364064634663
+"147";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2020-06-25;"BODAC_2";"after";"OBER.036";0,028249917604407
+"148";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2020-09-15;"BODAC_1";"after";"OBER.029";0,0144688472052031
+"149";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2020-09-15;"BODAC_2";"after";"OBER.030";0,0188937052393517
+"150";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2020-12-14;"BODAC_2";"after";"OBER.024";0,0266515986250412
+"151";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2021-06-16;"BODAC_1";"after";"OBER.012";0,0156478295706273
+"152";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2021-06-16;"BODAC_2";"after";"OBER.013";0,0200037742970372
+"153";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2021-09-08;"BODAC_1";"after";"OBER.006";0,0107932318423905
+"154";"Planctomycetacia__Pirellulales__Pirellulaceae__Pir4 lineage";2021-09-08;"BODAC_2";"after";"OBER.007";0,0155550318171105
+"155";"Planctomycetacia__Pirellulales__Pirellulaceae__Pirellula";2020-03-04;"BODAC_1";"after";"OBER.041";0,0636273724862243
+"156";"Planctomycetacia__Pirellulales__Pirellulaceae__Pirellula";2020-03-04;"BODAC_2";"after";"OBER.042";0,0270804879197476
+"157";"Planctomycetacia__Pirellulales__Pirellulaceae__Pirellula";2020-06-25;"BODAC_1";"after";"OBER.035";0,0348612616007914
+"158";"Planctomycetacia__Pirellulales__Pirellulaceae__Pirellula";2020-06-25;"BODAC_2";"after";"OBER.036";0,0193041103630114
+"159";"Planctomycetacia__Pirellulales__Pirellulaceae__Pirellula";2020-09-15;"BODAC_2";"after";"OBER.030";0,0107896720693554
+"160";"Planctomycetacia__Pirellulales__Pirellulaceae__Pirellula";2020-12-14;"BODAC_2";"after";"OBER.024";0,010265103357348
+"161";"Planctomycetacia__Pirellulales__Pirellulaceae__Pirellula";2021-06-16;"BODAC_1";"after";"OBER.012";0,0111702879766225
+"162";"Planctomycetacia__Pirellulales__Pirellulaceae__uncultured";2020-03-04;"BODAC_2";"after";"OBER.042";0,0458248952102859
+"163";"Planctomycetacia__Pirellulales__Pirellulaceae__uncultured";2020-06-25;"BODAC_2";"after";"OBER.036";0,0426102923866472
+"164";"Planctomycetacia__Pirellulales__Pirellulaceae__uncultured";2020-09-15;"BODAC_2";"after";"OBER.030";0,0209668300037693
+"165";"Planctomycetacia__Pirellulales__Pirellulaceae__uncultured";2020-12-14;"BODAC_2";"after";"OBER.024";0,0142675519141122
+"166";"Planctomycetacia__Pirellulales__Pirellulaceae__uncultured";2021-09-08;"BODAC_2";"after";"OBER.007";0,01069997643177
+"167";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__SH-PL14";2020-03-04;"BODAC_1";"after";"OBER.041";0,0237366363679179
+"168";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__SH-PL14";2020-03-04;"BODAC_2";"after";"OBER.042";0,0190269862949183
+"169";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__SH-PL14";2020-06-25;"BODAC_1";"after";"OBER.035";0,0319404531964008
+"170";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__SH-PL14";2020-09-15;"BODAC_1";"after";"OBER.029";0,0273352813648789
+"171";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__SH-PL14";2020-09-15;"BODAC_2";"after";"OBER.030";0,0146532227666792
+"172";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__SH-PL14";2020-12-14;"BODAC_2";"after";"OBER.024";0,0126194848613269
+"173";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__SH-PL14";2021-09-08;"BODAC_1";"after";"OBER.006";0,0116416081444125
+"174";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__uncultured";2020-03-04;"BODAC_1";"after";"OBER.041";0,22234257994631
+"175";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__uncultured";2020-03-04;"BODAC_2";"after";"OBER.042";0,033579805020487
+"176";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__uncultured";2020-06-25;"BODAC_1";"after";"OBER.035";0,0228011494794366
+"177";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__uncultured";2020-06-25;"BODAC_2";"after";"OBER.036";0,0183153632468572
+"178";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__uncultured";2020-09-15;"BODAC_1";"after";"OBER.029";0,017202375341691
+"179";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__uncultured";2020-09-15;"BODAC_2";"after";"OBER.030";0,0132868450810403
+"180";"Planctomycetacia__Planctomycetales__Rubinisphaeraceae__uncultured";2021-03-25;"BODAC_1";"after";"OBER.018";0,01115976832886
+"181";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Planctopirus";2020-03-04;"BODAC_1";"after";"OBER.041";0,0159186172467386
+"182";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Planctopirus";2020-03-04;"BODAC_2";"after";"OBER.042";0,0760137521782132
+"183";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Planctopirus";2020-06-25;"BODAC_1";"after";"OBER.035";0,0466387148443021
+"184";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Planctopirus";2020-06-25;"BODAC_2";"after";"OBER.036";0,0445877866189557
+"185";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Planctopirus";2020-09-15;"BODAC_2";"after";"OBER.030";0,0180927252167358
+"186";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Planctopirus";2020-12-14;"BODAC_2";"after";"OBER.024";0,0294297687997363
+"187";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Planctopirus";2021-06-16;"BODAC_2";"after";"OBER.013";0,0170786940932251
+"188";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Planctopirus";2021-09-08;"BODAC_1";"after";"OBER.006";0,0108403638591695
+"189";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Planctopirus";2021-09-08;"BODAC_2";"after";"OBER.007";0,019797313221777
+"190";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Schlesneria";2020-03-04;"BODAC_1";"after";"OBER.041";0,0483210097489757
+"191";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Schlesneria";2020-03-04;"BODAC_2";"after";"OBER.042";0,0391842886073565
+"192";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Schlesneria";2020-06-25;"BODAC_1";"after";"OBER.035";0,0791444857963914
+"193";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Schlesneria";2020-06-25;"BODAC_2";"after";"OBER.036";0,0221291021234521
+"194";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Schlesneria";2020-09-15;"BODAC_2";"after";"OBER.030";0,016255182811911
+"195";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Schlesneria";2020-12-14;"BODAC_2";"after";"OBER.024";0,0259452841738475
+"196";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Schlesneria";2021-06-16;"BODAC_2";"after";"OBER.013";0,0150971881487073
+"197";"Planctomycetacia__Planctomycetales__Schlesneriaceae__Schlesneria";2021-09-08;"BODAC_2";"after";"OBER.007";0,0159792599575772
+"198";"Planctomycetacia__Planctomycetales__uncultured__metagenome";2020-03-04;"BODAC_2";"after";"OBER.042";0,0804879197475628
+"199";"Planctomycetacia__Planctomycetales__uncultured__metagenome";2020-06-25;"BODAC_1";"after";"OBER.035";0,0108352569840298
+"200";"Planctomycetacia__Planctomycetales__uncultured__metagenome";2020-06-25;"BODAC_2";"after";"OBER.036";0,0813126795046848
+"201";"Planctomycetacia__Planctomycetales__uncultured__metagenome";2020-09-15;"BODAC_1";"after";"OBER.029";0,0159770006598171
+"202";"Planctomycetacia__Planctomycetales__uncultured__metagenome";2020-09-15;"BODAC_2";"after";"OBER.030";0,0590840557859028
+"203";"Planctomycetacia__Planctomycetales__uncultured__metagenome";2020-12-14;"BODAC_2";"after";"OBER.024";0,0253802326128926
+"204";"Planctomycetacia__Planctomycetales__uncultured__metagenome";2021-06-16;"BODAC_2";"after";"OBER.013";0,0402434421588979
+"205";"Planctomycetacia__Planctomycetales__uncultured__metagenome";2021-09-08;"BODAC_1";"after";"OBER.006";0,0112174199934015
+"206";"Planctomycetacia__Planctomycetales__uncultured__metagenome";2021-09-08;"BODAC_2";"after";"OBER.007";0,023898185246288
+"207";"Planctomycetacia__Planctomycetales__uncultured__uncultured bacterium";2020-03-04;"BODAC_2";"after";"OBER.042";0,0429049121650261
+"208";"Planctomycetacia__Planctomycetales__uncultured__uncultured bacterium";2020-06-25;"BODAC_2";"after";"OBER.036";0,0231178492396064
+"209";"Planctomycetacia__Planctomycetales__uncultured__uncultured bacterium";2020-09-15;"BODAC_2";"after";"OBER.030";0,0144647568790049
+"210";"Planctomycetacia__Planctomycetales__uncultured__uncultured bacterium";2020-12-14;"BODAC_2";"after";"OBER.024";0,0139379385035551
+"211";"Planctomycetacia__Planctomycetales__uncultured__uncultured bacterium";2021-06-16;"BODAC_2";"after";"OBER.013";0,0212304208341196
+"212";"Planctomycetacia__Planctomycetales__uncultured__uncultured bacterium";2021-09-08;"BODAC_2";"after";"OBER.007";0,0100400659910441
+"213";"Verrucomicrobiae__Verrucomicrobiales__Verrucomicrobiaceae__uncultured";2020-03-04;"BODAC_1";"after";"OBER.041";0,0142702397211887
+"214";"Verrucomicrobiae__Verrucomicrobiales__Verrucomicrobiaceae__uncultured";2020-06-25;"BODAC_1";"after";"OBER.035";0,0435294671880153
+"215";"Verrucomicrobiae__Verrucomicrobiales__Verrucomicrobiaceae__uncultured";2021-03-25;"BODAC_1";"after";"OBER.018";0,0108772425483825
+"216";"Verrucomicrobiae__Verrucomicrobiales__Verrucomicrobiaceae__uncultured";2021-06-16;"BODAC_1";"after";"OBER.012";0,0131969646981194

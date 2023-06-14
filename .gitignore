@@ -48,10 +48,32 @@ manuscript/
 figures/*tiff
 figures/*png
 
+# redundant figures
+formatted_figures/
+Stability_core*
+*rare13092.pdf
+*rare23345.pdf
+*_curves.pdf
+*_timepath.pdf
+*_grey.pdf
+*_backwash.pdf
+*_granules_fam.pdf
+*topN15_granules.pdf
+*topN25_granules.pdf
+
 # redundant data
+*_removal.Rmd
 *.rds
+input_data/RDS_files/
 input_data/*.qzv
 input_data/*metadata.txt
+input_data/*metadata_formatted.txt
+input_data/*.xlsx
 output_data/test*
-
+output_data/*.rds
+output_data/Table*
+output_data/*.fasta
+output_data/*.xlsx
+output_data/*.jpg
+output_data/*euk.csv
 

@@ -71,6 +71,7 @@ library(glue)
 library(lubridate)
 library(DECIPHER)
 library(ensembleTax)
+library(ggrepel)
 
 ```
 
@@ -303,16 +304,18 @@ psdata_OBER = psdata_OBER %>%
 # full dataset
 psdata_OBER_blank <- subset_samples(psdata_OBER, sample_type == "blank") # subset NC blank samples
 psdata_OBER_blank <- prune_taxa(taxa_sums(psdata_OBER_blank) > 0, psdata_OBER_blank) #247 taxa found in blanks
-psdata_OBER <- subset_samples(psdata_OBER, sample_type != "activated_sludge" & sample_type != "blank") # subset only BODAC samples
-psdata_OBER <- prune_taxa(taxa_sums(psdata_OBER) > 0, psdata_OBER) # 6119 taxa found in BODAC samples
+psdata_OBER <- subset_samples(psdata_OBER, sample_type != "activated_sludge" & sample_type != "blank" & sample_type == "granule") # subset only BODAC samples granules (n=35)
+psdata_OBER <- prune_taxa(taxa_sums(psdata_OBER) > 0, psdata_OBER) # 4612 taxa found in 35 BODAC granule samples
+
+
 
 # average and variation in coverage
-mean(sample_sums(psdata_OBER)) # = 49334
+mean(sample_sums(psdata_OBER)) # = 48159 reads
 summary(sample_sums(psdata_OBER))
-sum(sample_sums(psdata_OBER)) # 2368027 reads after filtering BODAC samples
+sum(sample_sums(psdata_OBER)) # 1685576 reads after filtering BODAC granule samples
 
 # number of reads in Blank (#538)
-sum(sample_sums(psdata_OBER_blank)) # across 3 NCs 13565 reads were detected
+summary(sample_sums(psdata_OBER_blank)) # across 3 NCs 13565 reads were detected
 
 ```
 
@@ -329,14 +332,14 @@ psdata_OBER_0.05pct <- prune_taxa(taxa_sums(psdata_OBER_rel) > 0.0005, psdata_OB
 psdata_OBER_0.1pct <- prune_taxa(taxa_sums(psdata_OBER_rel) > 0.001, psdata_OBER)
 
 # taxa remaining after filters
-ntaxa(psdata_OBER_0.01pct)  #4479 
-ntaxa(psdata_OBER_0.05pct)  #2749 
-ntaxa(psdata_OBER_0.1pct)   #2081 
+ntaxa(psdata_OBER_0.01pct)  #3409 
+ntaxa(psdata_OBER_0.05pct)  #2085 
+ntaxa(psdata_OBER_0.1pct)   #1581 
 
 # associated relative abundances with filters
-num(100*(sum(sample_sums(psdata_OBER_0.01pct))/total_sum), digits = 3) # (99.831% abundance)
-num(100*(sum(sample_sums(psdata_OBER_0.05pct))/total_sum), digits = 3) # (98.914% abundance)
-num(100*(sum(sample_sums(psdata_OBER_0.1pct))/total_sum), digits = 3)  # (97.919% abundance)
+num(100*(sum(sample_sums(psdata_OBER_0.01pct))/total_sum), digits = 3) # (99.83% abundance)
+num(100*(sum(sample_sums(psdata_OBER_0.05pct))/total_sum), digits = 3) # (98.88% abundance)
+num(100*(sum(sample_sums(psdata_OBER_0.1pct))/total_sum), digits = 3)  # (97.89% abundance)
 
 ### choice to continue downstream analysis with abundance filter that retains ASVs with at least 0.1% of total read abundance. (i.e. retaining > 99% of sequences)
 psdata_OBER_unfiltered <- psdata_OBER # save unfiltered data
@@ -357,21 +360,26 @@ sample_data(psdata_OBER_unfiltered)$combined = factor(paste0(
   sample_data(psdata_OBER_unfiltered)$sample_type, "-", 
   sample_data(psdata_OBER_unfiltered)$sampling_time))
 
+# create combined metadata factor
+sample_data(psdata_OBER)$combined = factor(paste0(
+  sample_data(psdata_OBER)$filter_type, "-", 
+  sample_data(psdata_OBER)$sample_type, "-", 
+  sample_data(psdata_OBER)$sampling_time))
+
 # show plot
-amp_rarecurve(psdata_OBER_unfiltered, color = "combined", legend.position = "bottomright")
+#amp_rarecurve(psdata_OBER_unfiltered, color = "combined", legend.position = "bottomright")
 
 # save plot
-pdf("figures/OBER_proj2_BODAC_rarefaction_curves.pdf", useDingbats = F, width = 6, height = 4)
+pdf("figures/OBER_proj2_BODAC_rarefaction_curves_granules.pdf", useDingbats = F, width = 6, height = 4)
 amp_rarecurve(psdata_OBER_unfiltered, color = "combined", legend.position = "bottomright")
 dev.off()
-
+ 
 #amp_rarecurve(psdata_OBER, color = "combined", legend.position = "bottomright")
 #amp_rarecurve(psdata_OBER, color = "Protocol", legend.position = "bottomright")
 
-# difference in sample coverage (7.39)
-max(sample_sums(psdata_OBER)/min(sample_sums(psdata_OBER)))
-
-sample_sums(psdata_OBER) %>% as_tibble %>% arrange() %>% tail
+# difference in sample coverage (6.01)
+#max(sample_sums(psdata_OBER)/min(sample_sums(psdata_OBER)))
+#sample_sums(psdata_OBER) %>% as_tibble %>% arrange() %>% tail
 
 ```
 
@@ -389,7 +397,7 @@ summary(sample_sums(psdata_OBER)) %>%
   
   # determine minimal sampling depth
   min_sample <- min(sample_sums(psdata_OBER))
-  
+  min_sample = 13092
   # rarefaction taking mean of 100 iterations
   set.seed(711)
   # OBER_rare13092 <- avgdist(OBER_matrix, d_method="bray", sample = min_sample, iterations = 100)
@@ -426,10 +434,8 @@ alpha %>%
   dplyr::mutate(combined = factor(combined, 
                            levels= c("BODAC_1-granule-before_backwash",
                                   "BODAC_1-granule-after_backwash",
-                                  "BODAC_1-backwash-NA",
                                   "BODAC_2-granule-before_backwash",
-                                  "BODAC_2-granule-after_backwash",
-                                  "BODAC_2-backwash-NA")))
+                                  "BODAC_2-granule-after_backwash")))
 
 # summary statistics of number of samples per group
 alpha %>% 
@@ -445,44 +451,56 @@ alpha2 = alpha %>% dplyr::mutate(date = lubridate::ymd(sampling_date),
                          sample_type = factor(sample_type, levels = c("granule", "backwash")))
 
 # plot alpha diversity
-Chao1 <- alpha2 %>% 
+Chao1 <- 
+alpha2 %>% 
 ggplot(aes(x=date, y=Chao1)) +
-  geom_point(aes(color = date, fill = date, shape = sampling_time, group = sampling_time), 
+  geom_point(aes(color = sampling_time, fill = sampling_time, group = sampling_time), 
              size = 2, show.legend = T) + 
-  geom_line(aes(group = sampling_time, color = date)) +
-  scale_color_gradient(low = "lightblue", high = "dodgerblue") +
-  scale_fill_gradient(low = "lightblue", high = "dodgerblue") +
-  scale_shape_manual(values = c(19,17, 2)) +
+  geom_line(aes(group = sampling_time, color = sampling_time)) +
+  scale_color_manual(values = c("#CC79A7", "dodgerblue")) +
+  scale_fill_manual(values = c("#CC79A7", "dodgerblue")) +
+  geom_vline(xintercept = as_date("2020-01-01"), linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = as_date("2021-01-01"), linetype = "dashed", color = "grey50") +
+  scale_x_date(date_breaks = "3 months",  date_labels = "%b", limits = as.Date(c('2019-08-1', NA))) +
+  scale_y_continuous(limits = c(NA,1200)) +
   theme_classic() +
   theme(axis.text.x = element_text(angle = 0, hjust = 1)) +
   theme(#legend.text = element_markdown(),
         legend.key.size = unit(7, "pt"),
-        axis.ticks.x = element_blank(), 
+        #axis.ticks.x = element_blank(), 
         strip.background = element_blank(),
         strip.placement = "outside",
         legend.position = "bottom",
         panel.border = element_rect(colour = "black", fill = NA)) +
-  facet_wrap(~ filter_type + sample_type)
+  facet_wrap(~ filter_type) +
+  labs(y = expression("ASV richness (Chao1)"),
+       x = NULL) +
+  theme(axis.text.x = element_text(hjust = 0.5))
 
 Shannon <- alpha2 %>% 
 ggplot(aes(x=date, y=Shannon)) +
-  geom_line(aes(group = sampling_time, color = date)) +
-  geom_point(aes(color = date, shape = sampling_time, group = sampling_time), 
-             size = 2, 
-             fill = "white",
-             show.legend = T) + 
-  scale_color_gradient(low = "lightblue", high = "dodgerblue") +
-  scale_fill_gradient(low = "lightblue", high = "dodgerblue") +
-  scale_shape_manual(values = c(19,17, 2)) +
+  geom_point(aes(color = sampling_time, fill = sampling_time, group = sampling_time), 
+             size = 2, show.legend = T) + 
+  geom_line(aes(group = sampling_time, color = sampling_time)) +
+  scale_color_manual(values = c("#CC79A7", "dodgerblue")) +
+  scale_fill_manual(values = c("#CC79A7", "dodgerblue")) +
+  geom_vline(xintercept = as_date("2020-01-01"), linetype = "dashed", color = "grey50") +
+  geom_vline(xintercept = as_date("2021-01-01"), linetype = "dashed", color = "grey50") +
+  scale_x_date(date_breaks = "3 months",  date_labels = "%b", limits = as.Date(c('2019-08-1', NA))) +
+  scale_y_continuous(limits = c(NA,6)) +
   theme_classic() +
-  theme(axis.text.x = element_text(angle = 0, hjust = 0.5),
-        #legend.text = element_markdown(),
+  theme(axis.text.x = element_text(angle = 0, hjust = 1)) +
+  theme(#legend.text = element_markdown(),
         legend.key.size = unit(7, "pt"),
+        #axis.ticks.x = element_blank(), 
         strip.background = element_blank(),
         strip.placement = "outside",
-        legend.position = "right",
+        legend.position = "bottom",
         panel.border = element_rect(colour = "black", fill = NA)) +
-  facet_wrap(~ filter_type + sample_type)
+  facet_wrap(~ filter_type) +
+  labs(y = expression("Shannon diversity"),
+       x = NULL) +
+  theme(axis.text.x = element_text(hjust = 0.5))
 
 # create plot
 prow = plot_grid(
@@ -500,7 +518,7 @@ prow = plot_grid(
 prow
 
 # save plot
-ggsave(prow, filename = "figures/plot_alpha_div_OBER_rare13092.pdf", width = 11, height = 6)
+ggsave(prow, filename = "figures/plot_alpha_div_OBER_rare13092_granules.pdf", width = 11, height = 4)
 
 
 ```
@@ -907,9 +925,7 @@ ggsave(plot = beta_figs,
    
 ```  
 
-```{r plot avg beta diversity ASV timepath granules, eval=T, echo=F, fig.height=3, fig.width=8, message=FALSE, warning=FALSE, cache=FALSE, include=T}
-
-library(ggrepel)
+```{r plot avg beta diversity ASV timepath granules, eval=T, echo=F, fig.height=3, fig.width=, message=FALSE, warning=FALSE, cache=FALSE, include=T}
 
 # PCoA on rarefied data
 pcoa_granules <- cmdscale(OBER_rare13092_granules, k = 2, eig = T, add = T)
@@ -932,8 +948,10 @@ pretty_pe_granules <- format(round(percent_explained_granules[1:2], digits = 1),
 labs <- c(glue("PCoA 1 ({pretty_pe_granules[1]}%)"),
           glue("PCoA 2 ({pretty_pe_granules[2]}%)"))
 
-p = 
+# TODO 
+p_before = 
   plot_beta_tbl_granules %>% 
+  filter(sampling_time == "before_backwash") %>% 
   dplyr::mutate(sampling_date = ymd(sampling_date),
          sampling_time = factor(sampling_time, levels = c("before_backwash", "after_backwash")),
          month = month.abb[month],
@@ -943,21 +961,56 @@ p =
   geom_hline(yintercept = 0, linetype = 3, color = "grey80") +
   geom_point(aes(color=sampling_date), size =3) +
   geom_path(aes(color = sampling_date), size = 1.5) +
-  scale_color_gradient(low = "lightblue", high = "dodgerblue", guide = "none") +
+  #scale_color_distiller(guide = "none") +
+  scale_color_gradient(low = "#0095FF", high = "#00457A", guide = "none") +
   scale_y_continuous(expand = c(-0.3, 0.4)) +
-  facet_grid(cols=vars(combi)) +
+  facet_grid(cols=vars(filter_type)) +
   labs(x = labs[1], y=labs[2]) +
-  theme_classic()
+  theme_classic() +
+  theme(strip.background = element_rect(colour = "white"),
+        strip.text = element_text(face = "bold"))
   
-p = p +  geom_text_repel(aes(label = month_year, color = sampling_date))
+p_after = 
+  plot_beta_tbl_granules %>% 
+  filter(sampling_time == "after_backwash") %>% 
+  dplyr::mutate(sampling_date = ymd(sampling_date),
+         sampling_time = factor(sampling_time, levels = c("before_backwash", "after_backwash")),
+         month = month.abb[month],
+         month_year = paste0(month, " ", year)) %>% 
+  ggplot(aes(x=pcoa1, y=pcoa2)) +
+  geom_vline(xintercept = 0, linetype = 3, color = "grey80") +
+  geom_hline(yintercept = 0, linetype = 3, color = "grey80") +
+  geom_point(aes(color=sampling_date), size =3) +
+  geom_path(aes(color = sampling_date), size = 1.5) +
+  #scale_color_distiller(guide = "none") +
+  scale_color_gradient(low = "#FF6AFF", high = "#A300A3", guide = "none") +
+  scale_y_continuous(expand = c(-0.3, 0.4)) +
+  facet_grid(cols=vars(filter_type)) +
+  labs(x = labs[1], y=labs[2]) +
+  theme_classic() +
+  theme(strip.background = element_rect(colour = "white"),
+        strip.text = element_text(face = "bold"))
 
-print(p)
+
+p_before = p_before +  geom_text_repel(aes(label = month_year, color = sampling_date))
+p_after = p_after +  geom_text_repel(aes(label = month_year, color = sampling_date))
+
+plot_beta_granules_grid = 
+  plot_grid(p_before + theme(legend.position = "none"),
+            p_after + theme(legend.position = "none"),
+                       ncol = 1,
+                       rel_heights = c(5,5))
+
+# show plpt
+plot_beta_granules_grid
 
 # save plot
-ggsave(plot = p, 
-       file = stringr::str_glue("figures/{proj}_beta_div_PCoA_BrayCurtis_granules_timepath.pdf"), 
-       width = 10, 
-       height = 4)
+ggsave(plot = plot_beta_granules_grid, 
+       file = stringr::str_glue("figures/{proj}_beta_div_PCoA_BrayCurtis_backwash_filtertype.pdf"), 
+       width = 6, 
+       height = 7)
+   
+
 
 ```
 
@@ -1409,6 +1462,7 @@ OBER_rare13092_table_granules_long_ASV %>%
   pull(tax_label) %>% unique()
 
 
+
 OBER_rare13092_table_granules_long_ASV %>% 
   #select(sampleID, ASV, rel_abund) %>%
   inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
@@ -1436,7 +1490,8 @@ OBER_rare13092_table_granules_long_ASV %>%
   group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
   summarise(rel_abund = sum(rel_abund)) %>% 
   filter(tax_label %in% top10_ASVs_granules,
-         rel_abund > 0.0099) %>% 
+         rel_abund > 0
+         ) %>% 
   inner_join(., top10_ASVs_granules_classes %>% select(tax_label, tax_name, functional_group), by = "tax_label") %>% 
   dplyr::mutate(sampling_time = factor(sampling_time, levels = c("before_backwash","after_backwash"))) %>% 
   ggplot(aes(x=date, y=tax_name)) +
@@ -1536,5 +1591,74 @@ ggsave(plot = top_asv_rel_abund_backwash,
        file = stringr::str_glue("figures/{proj}_ASV_top10_rel_abund_backwash.pdf"), 
        width = 12, 
        height = 8)
+
+# save underlying data table
+OBER_rare21227_table_backwash_long_ASV %>% 
+  #select(sampleID, ASV, rel_abund) %>%
+  inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
+  dplyr::mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
+  summarise(rel_abund = sum(rel_abund)) %>% 
+  filter(tax_label %in% top10_ASVs_backwash,
+         rel_abund > 0.0099) %>% 
+  write.csv2(., file = "output_data/data_bubbleplot.csv", col.names = T, na = "")
+
+# average 'core' abundance across all granule samples with positive detection
+# average core taxa abundance across B1 and B2 and before and after backwashing
+OBER_rare13092_table_granules_long_ASV %>% 
+  #select(sampleID, ASV, rel_abund) %>%
+  inner_join(., tax_beta_div %>% dplyr::rename(ASV = "taxon"), by = "ASV") %>% 
+  dplyr::mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  group_by(tax_label, date,filter_type, sampling_time, sampleID) %>% 
+  summarise(rel_abund = sum(rel_abund)) %>% 
+  filter(tax_label %in% top10_ASVs_granules,
+         rel_abund > 0.0099) %>% 
+  inner_join(., top10_ASVs_granules_classes %>% select(tax_label, tax_name, functional_group), by = "tax_label") %>% 
+  dplyr::mutate(sampling_time = factor(sampling_time, levels = c("before_backwash","after_backwash"))) %>% 
+  group_by(tax_label, sampling_time, filter_type) %>% 
+  summarise(mean_pct = mean(rel_abund*100), stdev = sd(rel_abund*100), n_samples = n()) %>% 
+  arrange(desc(mean_pct), .by_group = F) %>% 
+  ungroup() %>% 
+  mutate(across(where(is.numeric), round, digits = 3)) %>% 
+  #pivot_wider(names_from = filter_type, values_from = c(mean_pct, stdev, n_samples)) %>% 
+  pivot_wider(names_from = sampling_time, values_from = c(mean_pct:n_samples)) %>% 
+  write.csv2(., file = "output_data/data_bubbleplot_mean_rel_abund_overall.csv", col.names = T, na = "", dec = ".")
+
+
+core90_granules_abund %>%  
+  dplyr::rename(ASV = "OTU") %>% 
+  dplyr::mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)) %>% 
+  select(sampleid, tax_label, Abundance) %>%
+  group_by(sampleid, tax_label) %>% 
+  summarise(rel_abund = sum(Abundance), .groups = "drop") %>% 
+  inner_join(., 
+             tax_beta_div %>% 
+               dplyr::rename(ASV = "taxon") %>% 
+               dplyr::mutate(tax_label = paste0(Class, "__", Order, "__",Family, "__", Genus)),
+             by = "tax_label") %>% 
+  group_by(tax_label, ASV, sampleid) %>% 
+  summarise(rel_abund = sum(rel_abund)) %>% 
+  # filter(#tax_label %in% top10_ASVs_granules,
+  #        rel_abund > 0.0099) %>% 
+  inner_join(., core90_granules_abund %>% select(ASV = "OTU", sampleid, sampling_time, filter_type, sampling_date), by = "sampleid") %>% 
+  dplyr::mutate(sampling_time = factor(sampling_time, levels = c("before_backwash","after_backwash")),
+                date = ymd(sampling_date)) %>% 
+  group_by(tax_label, sampleid, sampling_time, filter_type, date) %>% 
+  summarise(rel_abund = sum(rel_abund)) %>% 
+  ggplot(aes(x=date, y=tax_label)) +
+# geom_point(aes(size = rel_abund, alpha = rel_abund, color = rel_abund)) +
+  geom_tile(aes(alpha = rel_abund, fill = rel_abund)) +
+  scale_size_continuous(breaks = c(0.01, 0.05, 0.1, 0.2, 0.3),
+                        labels = c("1%","5%","10%", "20%", "30%")) +
+  scale_fill_gradient(low = "dodgerblue", high = "darkblue") +
+  facet_grid(cols = vars(filter_type, sampling_time)) +
+  #theme_classic() #+
+  theme(axis.text.y = element_text(size = 8),
+        legend.position = "bottom",
+        panel.grid.major.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank())
+
 
 ```
